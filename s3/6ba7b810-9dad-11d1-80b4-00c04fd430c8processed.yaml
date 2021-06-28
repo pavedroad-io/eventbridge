@@ -1,0 +1,37 @@
+id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+processeditems:
+- date: 2021-06-25T14:49:30.663873021-10:00
+  bucket: pipeline-artifact-logs
+  name: pr2021-06-02-01-28-27-V54F6KVN6A7K9F9W
+  filename: /tmp/pipeline-artifact-logs-pr2021-06-02-01-28-27-V54F6KVN6A7K9F9W-261122767
+  pruned: true
+- date: 2021-06-25T14:49:30.688410806-10:00
+  bucket: pipeline-artifact-logs
+  name: pr2021-06-02-18-09-19-C30Y7PKWKHT6YD69
+  filename: /tmp/pipeline-artifact-logs-pr2021-06-02-18-09-19-C30Y7PKWKHT6YD69-287224290
+  pruned: true
+- date: 2021-06-25T14:49:30.724128641-10:00
+  bucket: pipeline-artifact-logs
+  name: pr2021-06-02-18-20-30-KAY8TOBP5LIK6XSN
+  filename: /tmp/pipeline-artifact-logs-pr2021-06-02-18-20-30-KAY8TOBP5LIK6XSN-783697369
+  pruned: true
+- date: 2021-06-25T14:49:30.828404703-10:00
+  bucket: pipeline-artifact-logs
+  name: pr2021-06-23-00-00-35-V4B6UIY7IILBSF9D
+  filename: /tmp/pipeline-artifact-logs-pr2021-06-23-00-00-35-V4B6UIY7IILBSF9D-064529252
+  pruned: true
+- date: 2021-06-25T14:49:30.83564159-10:00
+  bucket: pipeline-artifact-logs
+  name: pr2021-06-25-19-25-07-6HYE206WSC2YCUPM
+  filename: /tmp/pipeline-artifact-logs-pr2021-06-25-19-25-07-6HYE206WSC2YCUPM-398985075
+  pruned: true
+- date: 2021-06-25T14:49:31.413808066-10:00
+  bucket: pipeline-artifact-logs
+  name: pr2021-06-26-00-25-54-XDJNOFPWP528F0ZA
+  filename: /tmp/pipeline-artifact-logs-pr2021-06-26-00-25-54-XDJNOFPWP528F0ZA-111823926
+  pruned: true
+- date: 2021-06-25T14:49:31.562467777-10:00
+  bucket: pipeline-artifact-logs
+  name: pr2021-06-26-00-35-07-9FNCXKQSZV8NJ1FK
+  filename: /tmp/pipeline-artifact-logs-pr2021-06-26-00-35-07-9FNCXKQSZV8NJ1FK-650189853
+  pruned: true
