@@ -16,6 +16,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/minio/minio-go"
+
 	"github.com/pavedroad-io/eventbridge/s3"
 )
 
