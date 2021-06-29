@@ -7,7 +7,7 @@ import (
 	"github.com/minio/minio-go/v7"
 )
 
-func listBucketObjects(client *minio.Client, bucket string, opts minio.ListObjectsOptions) (objects []minio.ObjectInfo, err error) {
+func ListBucketObjects(client *minio.Client, bucket string, opts minio.ListObjectsOptions) (objects []minio.ObjectInfo, err error) {
 
 	for obj := range client.ListObjects(context.Background(), bucket, opts) {
 		if obj.Err != nil {

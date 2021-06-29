@@ -8,7 +8,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -16,10 +15,11 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/minio/minio-go"
-
 	"github.com/pavedroad-io/eventbridge/s3"
 )
 
+// "github.com/pavedroad-io/eventbridge/s3"
+//_ "eventbridge/s3"
 const (
 	//LogQueueJobType is type of Job from scheduler
 	LogQueueJobType string = "io.pavedraod.eventbridge.logQueueJob"
@@ -34,12 +34,13 @@ type logQueueJob struct {
 	Payload   []byte          `json:"payload"`
 	JobType   string          `json:"job_type"`
 	customers s3.Customer
-	s3Client  *minio.Client
+	//customers string
+	s3Client *minio.Client
 
 	// TODO: FIX to errors or custom errors
-	jobErrors []string  `json:"jobErrors"`
-	JobURL    *url.URL  `json:"job_url"`
-	Stats     httpStats `json:"stats"`
+	jobErrors []string      `json:"jobErrors"`
+	JobURL    *url.URL      `json:"job_url"`
+	Stats     logQueueStats `json:"stats"`
 }
 
 type logQueueStats struct {
@@ -64,51 +65,55 @@ func (j *logQueueJob) Init() error {
 	// Set job type
 	j.JobType = LogQueueJobType
 
-	j.Stats.RequestTimedOut = false
+	/*
+		j.Stats.RequestTimedOut = false
 
-	// Set http client options
-	if j.ClientTimeout == 0 {
-		j.ClientTimeout = ClientTimeout
-	}
+		// Set http client options
+		if j.ClientTimeout == 0 {
+			j.ClientTimeout = ClientTimeout
+		}
 
-	j.client = &http.Client{Timeout: time.Duration(j.ClientTimeout) * time.Second}
+		j.client = &http.Client{Timeout: time.Duration(j.ClientTimeout) * time.Second}
+	*/
 
 	return nil
 }
 
 func (j *logQueueJob) Run() (result Result, err error) {
-	req, err := http.NewRequest("GET", j.JobURL.String(), nil)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
+	/*
+		req, err := http.NewRequest("GET", j.JobURL.String(), nil)
+		if err != nil {
+			fmt.Println(err)
+			return nil, err
+		}
 
-	start := time.Now()
-	resp, err := j.client.Do(req)
+		start := time.Now()
+		resp, err := j.client.Do(req)
 
-	end := time.Now()
-	j.Stats.RequestTime = end.Sub(start)
+		end := time.Now()
+		j.Stats.RequestTime = end.Sub(start)
 
-	// client errors are handled with errors.New()
-	// so there is no defined set to check for
-	if err != nil {
-		j.Stats.RequestTimedOut = true
-		fmt.Println(err)
-		return nil, err
-	}
+		// client errors are handled with errors.New()
+		// so there is no defined set to check for
+		if err != nil {
+			j.Stats.RequestTimedOut = true
+			fmt.Println(err)
+			return nil, err
+		}
 
-	payload, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
+		payload, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			fmt.Println(err)
+			return nil, err
+		}
 
-	md := j.buildMetadata(resp)
-	jrsp := &httpResult{job: j,
-		metaData: md,
-		payload:  payload}
+		md := j.buildMetadata(resp)
+		jrsp := &httpResult{job: j,
+			metaData: md,
+			payload:  payload}
+	*/
 
-	return jrsp, nil
+	return nil, nil
 }
 
 // buildMetadata returns a map of strings with an http.Response encoded

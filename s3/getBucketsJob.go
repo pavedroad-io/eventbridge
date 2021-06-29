@@ -6,7 +6,7 @@ import (
 	"github.com/minio/minio-go/v7"
 )
 
-func listBuckets(c *minio.Client) ([]minio.BucketInfo, error) {
+func ListBuckets(c *minio.Client) ([]minio.BucketInfo, error) {
 
 	buckets, err := c.ListBuckets(context.Background())
 	if err != nil {

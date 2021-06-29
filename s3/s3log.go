@@ -9,14 +9,14 @@ import (
 	"strconv"
 )
 
-type s3LogLines []s3LogLine
+type S3LogLines []S3LogLine
 
 type LambdaEvent struct {
-	Data s3LogLine `json:"data"`
+	Data S3LogLine `json:"data"`
 }
 
-// s3LogLine format of S3 buckets logs
-type s3LogLine struct {
+// S3LogLine format of S3 buckets logs
+type S3LogLine struct {
 	BucketOwner    string `json:"bucketOwner"`    //0
 	Bucket         string `json:"bucket"`         //1
 	Time           string `json:"time"`           //2
@@ -120,7 +120,7 @@ type S3PatternFilter struct {
 }
 
 // String print a log line as a string
-func (li *s3LogLine) String() string {
+func (li *S3LogLine) String() string {
 	return fmt.Sprintf(
 		"%v\n%v\n%v\n%v\n%v\n%v\n%v\n%v\n%v\n%v\n%v\n%v\n%v\n%v\n%v\n%v\n%v\n%v",
 		li.BucketOwner,
@@ -160,9 +160,9 @@ func readLines(path string) ([]string, error) {
 	return lines, scanner.Err()
 }
 
-// parseS3 S3 log file
-func parseS3(file string) ([]s3LogLine, error) {
-	var items []s3LogLine
+// ParseS3 S3 log file
+func ParseS3(file string) ([]S3LogLine, error) {
+	var items []S3LogLine
 
 	lines, err := readLines(file)
 	if err != nil {
@@ -194,7 +194,7 @@ func parseS3(file string) ([]s3LogLine, error) {
 			os.Exit(0)
 		}
 
-		lineItem := new(s3LogLine)
+		lineItem := new(S3LogLine)
 
 		lineItem.BucketOwner = match[BUCKETOWNER]
 		lineItem.Bucket = match[BUCKET]

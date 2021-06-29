@@ -10,7 +10,7 @@ import (
 	"github.com/minio/minio-go/v7"
 )
 
-func getObject(client *minio.Client, bucket string, object string, opts minio.GetObjectOptions) (file string, er error) {
+func GetObject(client *minio.Client, bucket string, object string, opts minio.GetObjectOptions) (file string, er error) {
 
 	tmpfile, err := ioutil.TempFile("/tmp/", bucket+"-"+object+"-")
 	if err != nil {
