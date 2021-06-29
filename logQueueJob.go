@@ -8,17 +8,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/minio/minio-go"
+	"github.com/minio/minio-go/v7"
 	"github.com/pavedroad-io/eventbridge/s3"
 )
 
-// "github.com/pavedroad-io/eventbridge/s3"
 //_ "eventbridge/s3"
 const (
 	//LogQueueJobType is type of Job from scheduler
@@ -65,53 +65,73 @@ func (j *logQueueJob) Init() error {
 	// Set job type
 	j.JobType = LogQueueJobType
 
-	/*
-		j.Stats.RequestTimedOut = false
-
-		// Set http client options
-		if j.ClientTimeout == 0 {
-			j.ClientTimeout = ClientTimeout
-		}
-
-		j.client = &http.Client{Timeout: time.Duration(j.ClientTimeout) * time.Second}
-	*/
-
 	return nil
 }
 
 func (j *logQueueJob) Run() (result Result, err error) {
-	/*
-		req, err := http.NewRequest("GET", j.JobURL.String(), nil)
-		if err != nil {
-			fmt.Println(err)
-			return nil, err
+	c := s3.Customer{}
+	customers, err := c.LoadFromDisk("customer.yaml")
+	if err != nil {
+		log.Fatalf("fail loading customer.yaml: %v\n", err)
+
+	}
+	opts := minio.ListObjectsOptions{
+		Recursive: true,
+		Prefix:    "",
+	}
+
+	var logQueue []s3.LogQueueItem
+	var plogs s3.ProcessedLogs
+	for _, c := range customers {
+		// Load a list of previously processed logs
+		// For now ignore error if not found
+		plogs.LoadFromDisk(c.ID.String())
+
+		// Build a list of providers the customer
+		// uses
+		plist := c.Providers
+
+		for i, l := range c.Logs {
+			p, err := plist.Lookup(l.Provider)
+			if err != nil {
+				log.Printf("Provider not found: %v\n", err)
+			}
+			s3Client, err := s3.NewClient(p)
+			if err != nil {
+				log.Fatalln(err)
+			}
+			objects, err := s3.ListBucketObjects(s3Client, l.Name, opts)
+			if err != nil {
+				log.Fatalln(err)
+			}
+
+			for _, o := range objects {
+
+				// fmt.Println(o.Key)
+				f, err := s3.GetObject(s3Client, l.Name, o.Key, minio.GetObjectOptions{})
+				if err != nil {
+					log.Fatalln(err)
+				}
+
+				if plogs.Processed(l.Name, o.Key) {
+					//                  fmt.Printf("Skipping %s bucket %s logs\n", l.Name, o.Key)
+					continue
+				}
+
+				item := s3.LogQueueItem{
+					ID:        c.ID.String(),
+					Bucket:    l.Name,
+					Name:      o.Key,
+					Created:   time.Now(),
+					Location:  f,
+					LogFormat: c.Logs[i].LogFormat,
+					Processed: false,
+					Prune:     c.Logs[i].PruneAfterProcessing,
+				}
+				logQueue = append(logQueue, item)
+			}
 		}
-
-		start := time.Now()
-		resp, err := j.client.Do(req)
-
-		end := time.Now()
-		j.Stats.RequestTime = end.Sub(start)
-
-		// client errors are handled with errors.New()
-		// so there is no defined set to check for
-		if err != nil {
-			j.Stats.RequestTimedOut = true
-			fmt.Println(err)
-			return nil, err
-		}
-
-		payload, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			fmt.Println(err)
-			return nil, err
-		}
-
-		md := j.buildMetadata(resp)
-		jrsp := &httpResult{job: j,
-			metaData: md,
-			payload:  payload}
-	*/
+	}
 
 	return nil, nil
 }
