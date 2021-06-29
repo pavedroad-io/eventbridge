@@ -5,21 +5,24 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/pavedroad-io/eventbridge/s3"
 )
 
 const (
-	//HTTPJobType is type of Job from scheduler
-	HTTPJobType string = "io.pavedraod.eventcollector.httpjob"
+	//LogProcessorJobType is type of Job from scheduler
+	LogProcessorJobType string = "io.pavedraod.eventbridge.logprocessorjob"
+
 	//ClientTimeout in seconds to timeout client jobs
 	ClientTimeout int = 30
 )
@@ -27,11 +30,10 @@ const (
 type logProcessorJob struct {
 	ctx           context.Context `json:"ctx"`
 	JobID         uuid.UUID       `json:"job_id"`
-	Method        string          `json:"method"`
-	Payload       []data          `json:"payload"`
 	JobType       string          `json:"job_type"`
 	client        *http.Client    `json:"client"`
 	ClientTimeout int             `json:"client_timeout"`
+	Log           s3.LogQueueItem
 	// TODO: FIX to errors or custom errors
 	jobErrors []string  `json:"jobErrors"`
 	JobURL    *url.URL  `json:"job_url"`
@@ -49,7 +51,12 @@ func (j *logProcessorJob) ID() string {
 }
 
 func (j *logProcessorJob) Type() string {
-	return HTTPJobType
+	return LogProcessorJobType
+}
+
+func (j *logProcessorJob) InitWithJobChan(job chan Job) error {
+
+	return j.Init()
 }
 
 func (j *logProcessorJob) Init() error {
@@ -58,7 +65,7 @@ func (j *logProcessorJob) Init() error {
 	j.JobID = uuid.New()
 
 	// Set job type
-	j.JobType = HTTPJobType
+	j.JobType = LogProcessorJobType
 
 	j.Stats.RequestTimedOut = false
 
@@ -73,38 +80,81 @@ func (j *logProcessorJob) Init() error {
 }
 
 func (j *logProcessorJob) Run() (result Result, err error) {
-	req, err := http.NewRequest("GET", j.JobURL.String(), nil)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
+
+	//fmt.Println(j.Log)
+
+	var plogs s3.ProcessedLogs
+	_log := j.Log
+
+	switch _log.LogFormat {
+	case s3.S3:
+		loglines, err := s3.ParseS3(_log.Location)
+		if err != nil {
+			fmt.Printf("Parse failed with error: %w\n", err)
+		}
+		for _, eventData := range loglines {
+			event := s3.LambdaEvent{
+				Data: eventData,
+			}
+			eventBytes, _ := json.Marshal(event)
+
+			postBody := bytes.NewBuffer(eventBytes)
+
+			//TODO make host and port configurable
+			resp, err := http.Post(
+				"http://localhost:12001/eventbridge",
+				"application/json",
+				postBody)
+
+			if err != nil {
+				log.Printf("HTTP POST failed error %w\n", err)
+				jrsp := &logResult{}
+				return jrsp.LogErrorResults(j, err)
+			}
+			if resp.StatusCode != 200 {
+				log.Printf("HTTP POST failed non 200 status code %v\n", resp.StatusCode)
+				jrsp := &logResult{}
+				return jrsp.LogErrorResults(j, err)
+			}
+		}
+
+		_log.Processed = true
+		if _log.Prune {
+			if err := os.Remove(_log.Location); err != nil {
+				log.Printf("Failed to prune %s error %w\n", _log.Location, err)
+			}
+
+		}
+
+		nid, err := uuid.Parse(_log.ID)
+		if err != nil {
+			fmt.Printf("Fail converting ID %s to UUID err %w\n", _log.ID, err)
+		}
+		pli := s3.ProcessedLogItem{
+			Date:     time.Now(),
+			Bucket:   _log.Bucket,
+			Name:     _log.Name,
+			FileName: _log.Location,
+			Pruned:   _log.Prune,
+		}
+		plogs.ID = nid
+		plogs.AddProcessLog(_log.ID, pli)
 	}
 
-	start := time.Now()
-	resp, err := j.client.Do(req)
-
-	end := time.Now()
-	j.Stats.RequestTime = end.Sub(start)
-
-	// client errors are handled with errors.New()
-	// so there is no defined set to check for
+	// To avoid casting, convert Job to JSON
+	// and decode base on type via -> result.Decode()
+	jd, err := json.Marshal(j)
 	if err != nil {
-		j.Stats.RequestTimedOut = true
-		fmt.Println(err)
-		return nil, err
+		fmt.Println("Marshal result for job failed: ", jd)
 	}
 
-	payload, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-
-	md := j.buildMetadata(resp)
-	jrsp := &httpResult{job: j,
-		metaData: md,
-		payload:  payload}
+	jrsp := &logResult{job: jd,
+		payload: nil,
+		jobType: j.JobType}
 
 	return jrsp, nil
+
+	//	return nil, nil
 }
 
 // buildMetadata returns a map of strings with an http.Response encoded

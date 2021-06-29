@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"sync"
 	"time"
@@ -22,7 +21,8 @@ const (
 
 // Defaults
 const (
-	defaultConstantInterval = 10
+	// Look for new logs every 5 minutes
+	defaultConstantInterval = 300
 	defaultResponseTimeJobs = 10
 )
 
@@ -40,52 +40,51 @@ const (
 	averageJobProcessingTime        = "average_job_processing_time"
 )
 
-type httpScheduler struct {
+type eventScheduler struct {
 	jobList               []*logQueueJob
 	schedulerJobChan      chan Job       // Channel to read jobs from
 	schedulerResponseChan chan Result    // Channel to write repose to
 	schedulerDone         chan bool      // Shutdown initiated by application
 	schedulerInterrupt    chan os.Signal // Shutdown initiated by OS
-	metrics               httpSchedulerMetrics
+	metrics               SchedulerMetrics
 	mux                   *sync.Mutex
-	schedule              httpSchedule
+	schedule              eventSchedule
 }
 
-// httpSchedule holds the type of scheduler and it's configuration
+// eventSchedule holds the type of scheduler and it's configuration
 
-type httpSchedule struct {
+type eventSchedule struct {
 	ScheduleType        string `json:"schedule_type"`
 	SendIntervalSeconds int64  `json:"send_interval_seconds"`
 	ResponseTimeJobs    int    `json:"response_time_jobs"`
 }
 
-// httpSchedulerMetrics hold metrics about the Scheduler, Jobs, and Results
+// SchedulerMetrics hold metrics about the Scheduler, Jobs, and Results
 // We export attributes we want included in the JSON output
-type httpSchedulerMetrics struct {
+type SchedulerMetrics struct {
 	StartTime time.Time      `json:"start_time"`
 	UpTime    time.Duration  `json:"up_time"`
 	Counters  map[string]int `json:"counters"`
 	mux       *sync.Mutex
 }
 
-func (s *httpScheduler) MetricToJSON() ([]byte, error) {
+func (s *eventScheduler) MetricToJSON() ([]byte, error) {
 	s.metrics.mux.Lock()
 	defer s.metrics.mux.Unlock()
 	jb, e := json.Marshal(s.metrics)
 	if e != nil {
-		fmt.Println(e)
 		return nil, e
 	}
 	return jb, nil
 }
 
-func (s *httpScheduler) MetricSetStartTime() {
+func (s *eventScheduler) MetricSetStartTime() {
 	s.metrics.mux.Lock()
 	s.metrics.StartTime = time.Now()
 	s.metrics.mux.Unlock()
 }
 
-func (s *httpScheduler) MetricUpdateUpTime() (uptime time.Duration) {
+func (s *eventScheduler) MetricUpdateUpTime() (uptime time.Duration) {
 	s.metrics.mux.Lock()
 	ct := time.Now()
 	s.metrics.UpTime = ct.Sub(s.metrics.StartTime)
@@ -93,59 +92,41 @@ func (s *httpScheduler) MetricUpdateUpTime() (uptime time.Duration) {
 	return s.metrics.UpTime
 }
 
-func (s *httpScheduler) MetricInc(key string) {
+func (s *eventScheduler) MetricInc(key string) {
 	s.metrics.mux.Lock()
 	s.metrics.Counters[key]++
 	s.metrics.mux.Unlock()
 }
 
-func (s *httpScheduler) MetricSet(key string, value int) {
+func (s *eventScheduler) MetricSet(key string, value int) {
 	s.metrics.mux.Lock()
 	s.metrics.Counters[key] = value
 	s.metrics.mux.Unlock()
 }
 
-func (s *httpScheduler) MetricValue(key string) int {
+func (s *eventScheduler) MetricValue(key string) int {
 	s.metrics.mux.Lock()
 	defer s.metrics.mux.Unlock()
 	return s.metrics.Counters[key]
 }
 
 // UpdateJobList to a new list safely
-func (s *httpScheduler) UpdateJobList(newJobList []*logQueueJob) {
+func (s *eventScheduler) UpdateJobList(newJobList []*logQueueJob) {
 	s.mux.Lock()
 	s.jobList = newJobList
 	s.mux.Unlock()
 }
 
-// TODO: Move this to dispatcher, it is generic
-
-// A []listJobsResponse is a single job but returned as a list
-//
-// swagger:response listJobResponse
-type listJobsResponse struct {
-	// in: body
-
-	//ID: uuid for this job
-	ID string `json:"id"`
-
-	// URL for this http request
-	URL string `json:"url"`
-
-	//Type: of job the represents
-	Type string `json:"type"`
-}
-
 // Required object methods for interface
 //
 // GetScheduledJobs returns a list of job IDs and URL
-func (s *httpScheduler) GetScheduledJobs() ([]byte, error) {
+func (s *eventScheduler) GetScheduledJobs() ([]byte, error) {
 	var response []listJobsResponse
 
-	for _, v := range s.jobList {
+	for _, v := range interface{}(s.jobList).([]*logQueueJob) {
 		var newRow = listJobsResponse{}
 		newRow.ID = v.JobID.String()
-		newRow.URL = v.JobURL.String()
+		//		newRow.URL = v.JobURL.String()
 		newRow.Type = v.JobType
 		response = append(response, newRow)
 	}
@@ -158,13 +139,13 @@ func (s *httpScheduler) GetScheduledJobs() ([]byte, error) {
 }
 
 // GetScheduleJob returns a single job matching the UUID provided
-func (s *httpScheduler) GetScheduleJob(UUID string) (httpStatusCode int, jsonBlob []byte, err error) {
+func (s *eventScheduler) GetScheduleJob(UUID string) (httpStatusCode int, jsonBlob []byte, err error) {
 	var newRow = listJobsResponse{}
 
-	for _, v := range s.jobList {
+	for _, v := range interface{}(s.jobList).([]*logQueueJob) {
 		if v.ID() == UUID {
 			newRow.ID = v.ID()
-			newRow.URL = v.JobURL.String()
+			//			newRow.URL = v.JobURL.String()
 			newRow.Type = v.JobType
 			break
 		}
@@ -187,7 +168,7 @@ func (s *httpScheduler) GetScheduleJob(UUID string) (httpStatusCode int, jsonBlo
 
 // UpdateScheduleJob decodes json data into a job and updates the jobID
 // Returns httpStatusCode, JSON body, and error code
-func (s *httpScheduler) UpdateScheduleJob(jsonBlob []byte) (httpStatusCode int, jsonb []byte, err error) {
+func (s *eventScheduler) UpdateScheduleJob(jsonBlob []byte) (httpStatusCode int, jsonb []byte, err error) {
 	var updateData = listJobsResponse{}
 	var oldJobID, newJobID string
 	var newJobList []*logQueueJob
@@ -201,16 +182,18 @@ func (s *httpScheduler) UpdateScheduleJob(jsonBlob []byte) (httpStatusCode int, 
 		return http.StatusBadRequest, []byte(msg), e
 	}
 
-	for _, v := range s.jobList {
+	for _, v := range interface{}(s.jobList).([]*logQueueJob) {
 		if v.ID() == updateData.ID {
 			newJob := logQueueJob{}
-			pu, err := url.Parse(updateData.URL)
-			if err != nil {
-				fmt.Println(err)
-				msg := fmt.Sprintf("{\"error\": \"bad job url\", \"Error\": \"%v\"}", err)
-				return http.StatusBadRequest, []byte(msg), err
-			}
-			newJob.JobURL = pu
+			/*
+				pu, err := url.Parse(updateData.URL)
+				if err != nil {
+					fmt.Println(err)
+					msg := fmt.Sprintf("{\"error\": \"bad job url\", \"Error\": \"%v\"}", err)
+					return http.StatusBadRequest, []byte(msg), err
+				}
+			*/
+			//			newJob.JobURL = pu
 			e = newJob.Init()
 			if e != nil {
 				msg := fmt.Sprintf("{\"error\": \"job init failed\", \"Error\": \"%v\"}", e.Error())
@@ -242,7 +225,7 @@ func (s *httpScheduler) UpdateScheduleJob(jsonBlob []byte) (httpStatusCode int, 
 
 // CreateScheduleJob decodes json data into a job and inserts into jobList
 // Returns httpStatusCode, JSON body, and error code
-func (s *httpScheduler) CreateScheduleJob(jsonBlob []byte) (httpStatusCode int, jsonb []byte, err error) {
+func (s *eventScheduler) CreateScheduleJob(jsonBlob []byte) (httpStatusCode int, jsonb []byte, err error) {
 	var newJobType = listJobsResponse{}
 
 	e := json.Unmarshal(jsonBlob, &newJobType)
@@ -254,12 +237,14 @@ func (s *httpScheduler) CreateScheduleJob(jsonBlob []byte) (httpStatusCode int, 
 	}
 
 	newJob := logQueueJob{}
-	pu, err := url.Parse(newJobType.URL)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(-1)
-	}
-	newJob.JobURL = pu
+	/*
+		pu, err := url.Parse(newJobType.URL)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(-1)
+		}
+	*/
+	//	newJob.JobURL = pu
 	e = newJob.Init()
 	if e != nil {
 		msg := fmt.Sprintf("{\"error\": \"job init failed\", \"Error\": \"%v\"}", e.Error())
@@ -274,11 +259,11 @@ func (s *httpScheduler) CreateScheduleJob(jsonBlob []byte) (httpStatusCode int, 
 
 // DeleteScheduleJob delete the job with ID == uuid
 // Returns httpStatusCode, JSON body, and error code
-func (s *httpScheduler) DeleteScheduleJob(uuid string) (httpStatusCode int, jsonb []byte, err error) {
+func (s *eventScheduler) DeleteScheduleJob(uuid string) (httpStatusCode int, jsonb []byte, err error) {
 	var newJobList []*logQueueJob
 	var foundJob = false
 
-	for _, v := range s.jobList {
+	for _, v := range interface{}(s.jobList).([]*logQueueJob) {
 		if v.ID() == uuid {
 			foundJob = true
 			continue
@@ -300,7 +285,7 @@ func (s *httpScheduler) DeleteScheduleJob(uuid string) (httpStatusCode int, json
 }
 
 // Object methods for schedules
-func (s *httpScheduler) GetSchedule() (httpStatusCode int, jsonBlob []byte, err error) {
+func (s *eventScheduler) GetSchedule() (httpStatusCode int, jsonBlob []byte, err error) {
 
 	jb, e := json.Marshal(s.schedule)
 	if e != nil {
@@ -311,9 +296,9 @@ func (s *httpScheduler) GetSchedule() (httpStatusCode int, jsonBlob []byte, err 
 	return http.StatusOK, jb, nil
 }
 
-func (s *httpScheduler) UpdateSchedule(jsonBlob []byte) (httpStatusCode int, jsonb []byte, err error) {
+func (s *eventScheduler) UpdateSchedule(jsonBlob []byte) (httpStatusCode int, jsonb []byte, err error) {
 
-	us := httpSchedule{}
+	us := eventSchedule{}
 	e := json.Unmarshal(jsonBlob, &us)
 	if e != nil {
 		msg := fmt.Sprintf("{\"json.Unmarshal failed\": \"%v\"}", e)
@@ -331,9 +316,9 @@ func (s *httpScheduler) UpdateSchedule(jsonBlob []byte) (httpStatusCode int, jso
 }
 
 // CreateSchedule replace current schdule objec
-func (s *httpScheduler) CreateSchedule(jsonBlob []byte) (httpStatusCode int, jsonb []byte, err error) {
+func (s *eventScheduler) CreateSchedule(jsonBlob []byte) (httpStatusCode int, jsonb []byte, err error) {
 
-	us := httpSchedule{}
+	us := eventSchedule{}
 	e := json.Unmarshal(jsonBlob, &us)
 	if e != nil {
 		msg := fmt.Sprintf("{\"json.Unmarshal failed\": \"%v\"}", e)
@@ -350,7 +335,7 @@ func (s *httpScheduler) CreateSchedule(jsonBlob []byte) (httpStatusCode int, jso
 	return http.StatusCreated, []byte(msg), nil
 }
 
-func (s *httpScheduler) DeleteSchedule() (httpStatusCode int, jsonb []byte, err error) {
+func (s *eventScheduler) DeleteSchedule() (httpStatusCode int, jsonb []byte, err error) {
 
 	s.schedulerDone <- true
 	msg := fmt.Sprintf("{\"Status\": \"Success scheduler stopped\"}")
@@ -359,7 +344,7 @@ func (s *httpScheduler) DeleteSchedule() (httpStatusCode int, jsonb []byte, err 
 
 // SetChannels initializes channels the dispatcher has created inside
 // of the scheduler
-func (s *httpScheduler) SetChannels(j chan Job, r chan Result, b chan bool, i chan os.Signal) {
+func (s *eventScheduler) SetChannels(j chan Job, r chan Result, b chan bool, i chan os.Signal) {
 	s.schedulerJobChan = j
 	s.schedulerResponseChan = r
 	s.schedulerDone = b
@@ -369,13 +354,7 @@ func (s *httpScheduler) SetChannels(j chan Job, r chan Result, b chan bool, i ch
 }
 
 // Init load defaults jobs and initialize
-func (s *httpScheduler) Init() error {
-	urlList := []string{
-		"https://api.chucknorris.io/jokes/random",
-		"https://swapi.dev/api/people/1/",
-		"https://swapi.dev/api/people/2/",
-		"https://swapi.dev/api/people/3/"}
-
+func (s *eventScheduler) Init() error {
 	s.metrics.Counters = make(map[string]int)
 
 	s.mux = new(sync.Mutex)
@@ -385,35 +364,22 @@ func (s *httpScheduler) Init() error {
 	s.schedule.SendIntervalSeconds = defaultConstantInterval
 	s.schedule.ScheduleType = constantIntervaleScheduler
 
-	for _, u := range urlList {
-		newJob := logQueueJob{}
-		pu, err := url.Parse(u)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(-1)
-		}
-		newJob.JobURL = pu
-
-		// Set type and ID and http.Client
-		em := newJob.Init()
-		if em != nil {
-			return em
-		}
-
-		s.jobList = append(s.jobList, &newJob)
-	}
+	// Setup logQueueJob
+	nj := logQueueJob{}
+	nj.InitWithJobChan(s.schedulerJobChan)
+	s.jobList = append(s.jobList, &nj)
 
 	return nil
 }
 
-func (s *httpScheduler) Run() error {
+func (s *eventScheduler) Run() error {
 	go s.RunScheduler()
 	go s.RunResultsReader()
 
 	return nil
 }
 
-func (s *httpScheduler) RunScheduler() error {
+func (s *eventScheduler) RunScheduler() error {
 	s.MetricSetStartTime()
 	for {
 		s.MetricInc(schedulerIterations)
@@ -437,7 +403,7 @@ func (s *httpScheduler) RunScheduler() error {
 }
 
 // ComputeAverageResponseTime Keep track of the last N responses
-func (s *httpScheduler) ComputeAverageResponseTime(jt []int, newTime int) ([]int, int) {
+func (s *eventScheduler) ComputeAverageResponseTime(jt []int, newTime int) ([]int, int) {
 	currentLength := len(jt)
 	desiredLength := currentLength - 9
 	if currentLength >= s.schedule.ResponseTimeJobs {
@@ -454,8 +420,8 @@ func (s *httpScheduler) ComputeAverageResponseTime(jt []int, newTime int) ([]int
 	return jt, totalTime / currentLength
 }
 
-func (s *httpScheduler) RunResultsReader() error {
-	jobTimes := make([]int, 0, s.schedule.ResponseTimeJobs)
+func (s *eventScheduler) RunResultsReader() error {
+	//jobTimes := make([]int, 0, s.schedule.ResponseTimeJobs)
 	log.Println("Starting result reader")
 	for {
 		select {
@@ -463,14 +429,19 @@ func (s *httpScheduler) RunResultsReader() error {
 			s.MetricInc(resultsReceived)
 			s.MetricSet(currentResultChannelCapacit, cap(s.schedulerJobChan))
 			s.MetricSet(currentResultChannelUtilization, len(s.schedulerJobChan))
-			log.Printf("Processing response for job ID %v\n", currentResult.Job().ID())
-			j := currentResult.Job()
-			if j.(*logQueueJob).Stats.RequestTimedOut {
-				s.MetricInc(numberOfJobTimedOut)
+			jobFromResult, err := currentResult.Decode()
+			if err != nil {
+				log.Printf("Processing response for job ID %v\n", jobFromResult.ID())
 			}
-			jt, avg := s.ComputeAverageResponseTime(jobTimes, int(j.(*logQueueJob).Stats.RequestTime))
-			s.MetricSet(averageJobProcessingTime, avg)
-			jobTimes = jt
+			/*
+				j := currentResult.Job()
+				if j.(*logQueueJob).Stats.RequestTimedOut {
+					s.MetricInc(numberOfJobTimedOut)
+				}
+				jt, avg := s.ComputeAverageResponseTime(jobTimes, int(j.(*logQueueJob).Stats.RequestTime))
+				s.MetricSet(averageJobProcessingTime, avg)
+				jobTimes = jt
+			*/
 
 		case done := <-s.schedulerDone:
 			if done {
@@ -483,19 +454,19 @@ func (s *httpScheduler) RunResultsReader() error {
 	}
 }
 
-func (s *httpScheduler) Pause() []byte {
+func (s *eventScheduler) Pause() []byte {
 
 	return nil
 }
 
-func (s *httpScheduler) Shutdown() error {
+func (s *eventScheduler) Shutdown() error {
 
 	return nil
 }
 
 // Status methods
 // DeleteSchedule stops go scheduler goroutine
-func (s *httpScheduler) Metrics() []byte {
+func (s *eventScheduler) Metrics() []byte {
 	jb, e := s.MetricToJSON()
 	if e != nil {
 		return nil

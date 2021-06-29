@@ -11,6 +11,7 @@ type Job interface {
 	ID() string
 	Type() string
 	Init() error
+	InitWithJobChan(job chan Job) error
 	Run() (result Result, err error)
 	Pause() (status string, err error)
 	Shutdown() error

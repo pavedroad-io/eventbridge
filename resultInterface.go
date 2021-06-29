@@ -3,7 +3,10 @@ package main
 // Result for a given job
 type Result interface {
 	// Return the original job
-	Job() Job
+	Job() []byte
+
+	// Decode () (Job, error)
+	Decode() (Job, error)
 
 	// Return the header/message headers
 	MetaData() map[string]string

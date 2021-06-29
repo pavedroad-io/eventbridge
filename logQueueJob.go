@@ -5,13 +5,10 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"net/url"
-	"os"
 	"time"
 
 	"github.com/google/uuid"
@@ -23,23 +20,18 @@ import (
 const (
 	//LogQueueJobType is type of Job from scheduler
 	LogQueueJobType string = "io.pavedraod.eventbridge.logQueueJob"
-	//ClientTimeout in seconds to timeout client jobs
-	ClientTimeout int = 30
 )
 
 type logQueueJob struct {
-	ctx       context.Context `json:"ctx"`
-	JobID     uuid.UUID       `json:"job_id"`
-	Method    string          `json:"method"`
-	Payload   []byte          `json:"payload"`
-	JobType   string          `json:"job_type"`
-	customers s3.Customer
-	//customers string
-	s3Client *minio.Client
+	JobID            uuid.UUID     `json:"jobID"`
+	Payload          []byte        `json:"payload"`
+	JobType          string        `json:"jobType"`
+	customers        s3.Customer   `json:"customers"`
+	s3Client         *minio.Client `json:"s3Client"`
+	schedulerJobChan chan Job      `json:"schedulerJobChan"`
 
 	// TODO: FIX to errors or custom errors
 	jobErrors []string      `json:"jobErrors"`
-	JobURL    *url.URL      `json:"job_url"`
 	Stats     logQueueStats `json:"stats"`
 }
 
@@ -55,6 +47,11 @@ func (j *logQueueJob) ID() string {
 
 func (j *logQueueJob) Type() string {
 	return LogQueueJobType
+}
+
+func (j *logQueueJob) InitWithJobChan(job chan Job) error {
+	j.schedulerJobChan = job
+	return j.Init()
 }
 
 func (j *logQueueJob) Init() error {
@@ -107,14 +104,13 @@ func (j *logQueueJob) Run() (result Result, err error) {
 
 			for _, o := range objects {
 
-				// fmt.Println(o.Key)
 				f, err := s3.GetObject(s3Client, l.Name, o.Key, minio.GetObjectOptions{})
 				if err != nil {
 					log.Fatalln(err)
 				}
 
 				if plogs.Processed(l.Name, o.Key) {
-					//                  fmt.Printf("Skipping %s bucket %s logs\n", l.Name, o.Key)
+					// fmt.Printf("Skipping %s bucket %s logs\n", l.Name, o.Key)
 					continue
 				}
 
@@ -128,43 +124,46 @@ func (j *logQueueJob) Run() (result Result, err error) {
 					Processed: false,
 					Prune:     c.Logs[i].PruneAfterProcessing,
 				}
+				// Write new Job to dispatcher Job
+				// Channel
+				nj := &logProcessorJob{}
+				nj.Init()
+				nj.Log = item
+
+				j.schedulerJobChan <- nj
+
 				logQueue = append(logQueue, item)
 			}
 		}
 	}
 
-	return nil, nil
-}
-
-// buildMetadata returns a map of strings with an http.Response encoded
-func (j *logQueueJob) buildMetadata(resp *http.Response) map[string]string {
-	md := make(map[string]string)
-	md["StatusCode"] = string(rune(resp.StatusCode))
-	md["Proto"] = resp.Proto
-
-	for n, v := range resp.Header {
-		var hv string
-		for _, s := range v {
-			hv = hv + s + " "
-		}
-		md[n] = hv
+	payload, err := json.Marshal(logQueue)
+	if err != nil {
+		fmt.Errorf("Error %w\n", err)
+		return nil, err
 	}
 
-	md["RemoteAddr"] = resp.Request.RemoteAddr
-	md["Method"] = resp.Request.Method
+	//		metaData: md,
+	jd, err := json.Marshal(j)
+	if err != nil {
+		fmt.Println(err)
+	}
+	jrsp := &logResult{job: jd,
+		jobType: j.Type(),
+		payload: payload}
 
-	return md
+	return jrsp, nil
 }
 
 func (j *logQueueJob) newJob(url url.URL) logQueueJob {
 	newJob := logQueueJob{}
-	pu, err := url.Parse(url.String())
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(-1)
-	}
-	newJob.JobURL = pu
+	/*
 
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(-1)
+		}
+	*/
 	// Set type and ID and http.Client
 	newJob.Init()
 	return newJob

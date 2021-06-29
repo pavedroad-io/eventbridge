@@ -177,7 +177,7 @@ func ParseS3(file string) ([]S3LogLine, error) {
 	regex := *regexp.MustCompile(S3Regex)
 
 	// Log to metrics in JOb
-	fmt.Printf("Lines to process %d\n", len(lines))
+	// fmt.Printf("Lines to process %d\n", len(lines))
 	for _, line := range lines {
 		if skiplines < 2 {
 			skiplines += 1

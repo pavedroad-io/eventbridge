@@ -37,7 +37,7 @@ func (a *EventbridgeApp) Initialize() {
 
 	// Start the Dispatcher
 	//a.Scheduler = &bridgeScheduler{}
-	a.Scheduler = &httpScheduler{}
+	a.Scheduler = &eventScheduler{}
 
 	dConf := &dispatcherConfiguration{
 		scheduler:           a.Scheduler,

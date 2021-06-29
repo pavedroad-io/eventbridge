@@ -60,6 +60,22 @@ type managementGetResponse struct {
 	Fields []string `json:"fields"`
 }
 
+// A []listJobsResponse is a single job but returned as a list
+//
+// swagger:response listJobResponse
+type listJobsResponse struct {
+	// in: body
+
+	//ID: uuid for this job
+	ID string `json:"id"`
+
+	// URL for this http request
+	URL string `json:"url"`
+
+	//Type: of job the represents
+	Type string `json:"type"`
+}
+
 // get404Response Not found
 //
 // swagger:response get404Response
@@ -323,7 +339,6 @@ func (d *dispatcher) Init(dc *dispatcherConfiguration) {
 	d.mux = &sync.Mutex{}
 	d.wg = &sync.WaitGroup{}
 
-
 	// Scheduler channels
 	d.schedulerJobChan = make(chan Job, d.conf.sizeOfJobChannel)
 	d.schedulerResultChan = make(chan Result, d.conf.sizeOfResultChannel)
@@ -409,10 +424,10 @@ func (d *dispatcher) managementInit() {
 func (d dispatcher) Run() error {
 	e := d.createWorkerPool()
 	if e == nil {
-                go d.Forwarder()
-                go d.Responder()
-                return nil
-        }
+		go d.Forwarder()
+		go d.Responder()
+		return nil
+	}
 
 	return e
 }
@@ -529,10 +544,10 @@ func (d *dispatcher) ProcessManagementRequest(r managementRequest) (httpStatusCo
 		}
 
 		e := d.createWorkerPool()
-		 if e != nil {
-                        msg := fmt.Sprintf("{\"status\": \"couldn't start worker pool: %v\"}", e)
-                        return http.StatusExpectationFailed, []byte(msg), nil
-                }
+		if e != nil {
+			msg := fmt.Sprintf("{\"status\": \"couldn't start worker pool: %v\"}", e)
+			return http.StatusExpectationFailed, []byte(msg), nil
+		}
 
 		msg := fmt.Sprintf("{\"Status\": \"Worker stop initiated\"}")
 		return http.StatusOK, []byte(msg), nil

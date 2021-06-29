@@ -137,7 +137,6 @@ func main() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
 	a.accessLog = openAccessLogFile(httpconf.logPath + httpconf.accessFile)
-	os.Exit(0)
 
 	a.Initialize()
 	a.Run(httpconf.listenString)
