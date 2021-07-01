@@ -100,11 +100,12 @@ func (j *logProcessorJob) Run() (result Result, err error) {
 		}
 
 		for _, eventData := range loglines {
-			event := s3.LambdaEvent{
-				Data: eventData,
+			// Parse opertion field and skip if filer doesn't match
+			opt := eventData.GetOperation()
+			if !opt.FilterLine(eventData, filter) {
+				continue
 			}
-			eventBytes, _ := json.Marshal(event)
-
+			eventBytes, _ := json.Marshal(eventData)
 			postBody := bytes.NewBuffer(eventBytes)
 
 			//TODO make host and port configurable

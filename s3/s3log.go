@@ -140,7 +140,7 @@ type S3RequestURI struct {
 	Protocol   string `json:"protocol"`
 }
 
-//  Future use for filtering logic
+//  S3Filter use for filtering logic
 type S3Filter struct {
 	MatchedAPI          []string `json:"matchedAPI"`
 	MatchedHTTPMethods  []string `json:"matchedHTTPMethods"`
