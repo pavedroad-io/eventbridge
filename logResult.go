@@ -61,12 +61,6 @@ func (r *logResult) LogErrorResults(job interface{}, callingerror error) (Result
 	r.metaData = md
 	r.job = jobD
 
-	/*
-		TODO: log these
-		fmt.Println(string(r.job))
-		fmt.Println(r.metaData)
-		fmt.Println(string(r.jobType))
-	*/
 	return r, nil
 }
 

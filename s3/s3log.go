@@ -65,7 +65,7 @@ const (
 	RXRequester      string = `(\w*)\s`
 	RXRequestId      string = `(\w*)\s`
 	RXOperation      string = `([a-zA-Z0-9\.]*)\s`
-	RXKey            string = `([a-zA-Z0-9+\%\.-]*)\s`
+	RXKey            string = `([a-zA-Z0-9\S]*)\s`
 	RXRequestURI     string = `"(.*?)"\s`
 	RXHttpStatusCode string = `(\d*)\s`
 	RXErrorCode      string = `([\w-]*)\s`
@@ -247,9 +247,8 @@ func ParseS3(file string) ([]S3LogLine, error) {
 		// If the match fails we have a log line we don't
 		// know how to process check pattern
 		if len(match) == 0 {
-			fmt.Println(S3Regex)
-			fmt.Println(line)
-			os.Exit(0)
+			log.Println("Regex failed: ", S3Regex)
+			log.Println("For: ", line)
 		}
 
 		lineItem := new(S3LogLine)

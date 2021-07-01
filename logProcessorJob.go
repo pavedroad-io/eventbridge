@@ -119,8 +119,8 @@ func (j *logProcessorJob) Run() (result Result, err error) {
 				jrsp := &logResult{}
 				return jrsp.LogErrorResults(j, err)
 			}
-			if resp.StatusCode != 200 {
-				log.Printf("HTTP POST failed non 200 status code %v\n", resp.StatusCode)
+			if resp.StatusCode == 200 || resp.StatusCode == 201 {
+				log.Printf("HTTP POST failed non 200/201 status code %v\n", resp.StatusCode)
 				jrsp := &logResult{}
 				return jrsp.LogErrorResults(j, err)
 			}
