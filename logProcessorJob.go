@@ -92,6 +92,13 @@ func (j *logProcessorJob) Run() (result Result, err error) {
 		if err != nil {
 			fmt.Printf("Parse failed with error: %w\n", err)
 		}
+
+		var filter s3.S3Filter = s3.S3Filter{
+			MatchedAPI:          []string{"REST"},
+			MatchedHTTPMethods:  []string{"PUT"},
+			MatchedResouceTypes: []string{"OBJECT"},
+		}
+
 		for _, eventData := range loglines {
 			event := s3.LambdaEvent{
 				Data: eventData,

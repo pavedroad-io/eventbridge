@@ -87,10 +87,7 @@ func s3main() {
 				fmt.Printf("Parse failed with error: %w\n", err)
 			}
 			for _, eventData := range po {
-				le := LambdaEvent{
-					Data: eventData,
-				}
-				j, _ := json.Marshal(le)
+				j, _ := json.Marshal(eventData)
 
 				// fmt.Println(string(j))
 				postBody := bytes.NewBuffer(j)

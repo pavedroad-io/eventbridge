@@ -7,13 +7,10 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 type S3LogLines []S3LogLine
-
-type LambdaEvent struct {
-	Data S3LogLine `json:"data"`
-}
 
 // S3LogLine format of S3 buckets logs
 type S3LogLine struct {
@@ -88,12 +85,51 @@ const S3Regex string = RXBucketOwner + RXBucket + RXTime +
 	RXObjectSize + RXTotalTime + RXTurnAroundTime + RXReferrer +
 	RXUserAgent + RXVersionId
 
-// S3Operation only supporting Rest, not including SOAP
-//  Future use for parsing sub-objects
+// S3Operation parsed operations method of a log line
 type S3Operation struct {
 	API          string `json:"api"`
 	HTTPMethod   string `json:"httpMethod"`
 	ResourceType string `json:"resourceType"`
+}
+
+func (s3opt *S3Operation) FilterLine(s3line S3LogLine, filter S3Filter) bool {
+	APITrue := true
+	HTTPMethodTrue := true
+	ResourceTypeTrue := true
+
+	lineOption := s3line.GetOperation()
+
+	foundonce := false
+	if len(filter.MatchedAPI) > 0 {
+		for _, v := range filter.MatchedAPI {
+			if strings.Contains(strings.ToLower(v), strings.ToLower(lineOption.API)) {
+				foundonce = true
+			}
+		}
+		APITrue = foundonce
+	}
+
+	foundonce = false
+	if len(filter.MatchedHTTPMethods) > 0 {
+		for _, v := range filter.MatchedHTTPMethods {
+			if strings.Contains(strings.ToLower(v), strings.ToLower(lineOption.HTTPMethod)) {
+				foundonce = true
+			}
+		}
+		HTTPMethodTrue = foundonce
+	}
+
+	foundonce = false
+	if len(filter.MatchedResouceTypes) > 0 {
+		for _, v := range filter.MatchedResouceTypes {
+			if strings.Contains(strings.ToLower(v), strings.ToLower(lineOption.ResourceType)) {
+				foundonce = true
+			}
+		}
+		APITrue = foundonce
+	}
+
+	return APITrue && HTTPMethodTrue && ResourceTypeTrue
 }
 
 // S3RequestURI
@@ -106,10 +142,9 @@ type S3RequestURI struct {
 
 //  Future use for filtering logic
 type S3Filter struct {
-	MatchMethods     []S3RequestURI `json:"matchMethods"`
-	NotMatchMethods  []S3RequestURI `json:"notMatchMethods"`
-	MatchProtocol    []S3RequestURI `json:"matchProtocol"`
-	NotMatchProtocol []S3RequestURI `json:"notMatchProtocol"`
+	MatchedAPI          []string `json:"matchedAPI"`
+	MatchedHTTPMethods  []string `json:"matchedHTTPMethods"`
+	MatchedResouceTypes []string `json:"matchedResouceTypes"`
 }
 
 //  Future use for filtering logic
@@ -142,6 +177,29 @@ func (li *S3LogLine) String() string {
 		li.UserAgent,
 		li.VersionId,
 	)
+}
+
+// GetOperation REST.PUT.OBJECT
+// - SOAP.operation
+// - REST.HTTP_method.resource_type  What we see from Wasabi
+// - WEBSITE.HTTP_method.resource_type
+// - BATCH.DELETE.OBJECT
+
+// Wasabi obserbed
+// REST
+// GET/PUT
+// OBJECT/LOGGING/BUCKET/OBJECTLOCKING/COMPLIANCE
+
+func (li *S3LogLine) GetOperation() S3Operation {
+	var opt S3Operation
+	fields := strings.Split(li.Operation, ".")
+	if len(fields) == 3 {
+		opt.API = fields[0]
+		opt.HTTPMethod = fields[1]
+		opt.ResourceType = fields[2]
+		return opt
+	}
+	return opt
 }
 
 // readLines from the file specified
