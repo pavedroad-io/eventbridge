@@ -72,6 +72,7 @@ func (j *logQueueJob) Run() (result Result, err error) {
 		log.Fatalf("fail loading customer.yaml: %v\n", err)
 
 	}
+	fmt.Println(customers)
 	opts := minio.ListObjectsOptions{
 		Recursive: true,
 		Prefix:    "",
@@ -157,13 +158,6 @@ func (j *logQueueJob) Run() (result Result, err error) {
 
 func (j *logQueueJob) newJob(url url.URL) logQueueJob {
 	newJob := logQueueJob{}
-	/*
-
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(-1)
-		}
-	*/
 	// Set type and ID and http.Client
 	newJob.Init()
 	return newJob

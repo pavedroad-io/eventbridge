@@ -142,9 +142,9 @@ type S3RequestURI struct {
 
 //  S3Filter use for filtering logic
 type S3Filter struct {
-	MatchedAPI          []string `json:"matchedAPI"`
-	MatchedHTTPMethods  []string `json:"matchedHTTPMethods"`
-	MatchedResouceTypes []string `json:"matchedResouceTypes"`
+	MatchedAPI          []string `yaml:"matchedAPI"`
+	MatchedHTTPMethods  []string `yaml:"matchedHTTPMethods"`
+	MatchedResouceTypes []string `yaml:"matchedResouceTypes"`
 }
 
 //  Future use for filtering logic

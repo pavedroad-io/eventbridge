@@ -19,6 +19,7 @@ const (
 	constantIntervaleScheduler = "Constant interval scheduler"
 )
 
+// TODO: create scheduler configuration with environment overrides
 // Defaults
 const (
 	// Look for new logs every 5 minutes
