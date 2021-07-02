@@ -13,6 +13,7 @@ type Customers struct {
 	Customers []Customer `yaml:"customers"`
 }
 
+// Customer configuration and information
 type Customer struct {
 	// ID unique ID for this customer
 	ID uuid.UUID `yaml:"id"`
@@ -25,6 +26,9 @@ type Customer struct {
 
 	// Providers associated with logs
 	Providers Providers `yaml:"providers"`
+
+	// Syncconfiguration
+	Configuration SyncConfiguration `yaml:"config"`
 }
 
 func (c *Customer) LoadFromDisk(file string) ([]Customer, error) {

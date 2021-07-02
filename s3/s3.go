@@ -84,38 +84,34 @@ func s3main() {
 		case S3:
 			po, err := ParseS3(l.Location)
 			if err != nil {
-				fmt.Printf("Parse failed with error: %w\n", err)
+				fmt.Printf("Parse failed with error: %v\n", err)
 			}
 			for _, eventData := range po {
 				j, _ := json.Marshal(eventData)
 
-				// fmt.Println(string(j))
 				postBody := bytes.NewBuffer(j)
 
 				resp, err := http.Post("http://localhost:12001/eventbridge", "application/json", postBody)
 
 				if err != nil {
-					log.Printf("HTTP POST failed error %w\n", err)
+					log.Printf("HTTP POST failed error %v\n", err)
 				}
 				if resp.StatusCode != 200 {
 					log.Printf("HTTP POST failed non 200 status code %v\n", resp.StatusCode)
 				}
-
-				//fmt.Println(string(j))
-				//os.Exit(1)
 			}
 
 			l.Processed = true
 			if l.Prune {
 				if err := os.Remove(l.Location); err != nil {
-					log.Printf("Failed to prune %s error %w\n", l.Location, err)
+					log.Printf("Failed to prune %s error %v\n", l.Location, err)
 				}
 
 			}
 
 			nid, err := uuid.Parse(l.ID)
 			if err != nil {
-				fmt.Printf("Fail converting ID %s to UUID err %w\n", l.ID, err)
+				fmt.Printf("Fail converting ID %s to UUID err %v\n", l.ID, err)
 			}
 			i := ProcessedLogItem{
 				Date:     time.Now(),

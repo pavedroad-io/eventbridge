@@ -23,11 +23,23 @@ const (
 	rStor string = "w3c"
 )
 
+// LogBuckets Information on a bucket to monitor
 type LogBuckets struct {
-	Name                 string `yaml:"name"`
-	LogFormat            string `yaml:"logFormat"`
-	Provider             string `yaml:"provider"`
-	PruneAfterProcessing bool   `yaml:"pruneAfterProcessing"`
+
+	// Name of the bucket
+	Name string `yaml:"name"`
+
+	// LogFormat S3, w3c, etc
+	LogFormat string `yaml:"logFormat"`
+
+	// Provider credentials
+	Provider string `yaml:"provider"`
+
+	// PruneAfterProcessing aka delete when donw
+	PruneAfterProcessing bool `yaml:"pruneAfterProcessing"`
+
+	// FilterEvents to apply to the log
+	FilterEvents S3Filter `yaml:"filter"`
 }
 
 type LogQueue []LogQueueItem
