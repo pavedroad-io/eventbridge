@@ -1,0 +1,20 @@
+{
+  "bucketOwner": "D22FC51D48855E3988E83A22F54656159A9D704EBF061970FA52DE01AD4EEDC8",
+  "bucket": "pr-release-pipeline-artifacts",
+  "time": "[02/Jun/2021:01:26:26 +0000]",
+  "remoteIP": "10.3.113.230",
+  "requester": "D22FC51D48855E3988E83A22F54656159A9D704EBF061970FA52DE01AD4EEDC8",
+  "requestId": "3066CFD40D0B7C10",
+  "operation": "REST.PUT.OBJECT",
+  "key": "sca%2FBlock+and+Blueprints-3-21.pdf",
+  "requestURI": "PUT /pr-release-pipeline-artifacts/sca/Block%20and%20Blueprints-3-21.pdf",
+  "httpStatusCode": 200,
+  "errorCode": "-",
+  "bytesSent": 463,
+  "objectSize": 0,
+  "totalTime": 179,
+  "turnAroundTime": 179,
+  "referrer": "",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36",
+  "versionId": "5"
+}

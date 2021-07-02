@@ -13,7 +13,7 @@ require (
 	github.com/minio/md5-simd v1.1.2 // indirect
 	github.com/minio/minio-go/v7 v7.0.12
 	github.com/minio/sha256-simd v1.0.0 // indirect
-	github.com/pavedroad-io/eventbridge/s3 v0.0.0-20210701165945-56d1465d3dac
+	github.com/pavedroad-io/eventbridge/s3 v0.0.0-20210701220002-464042583b78
 	github.com/rs/xid v1.3.0 // indirect
 	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e // indirect
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e // indirect

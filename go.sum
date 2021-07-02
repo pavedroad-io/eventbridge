@@ -54,8 +54,8 @@ github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd/go.mod h1:6dJ
 github.com/modern-go/reflect2 v0.0.0-20180701023420-4b7aa43c6742/go.mod h1:bx2lNnkwVCuqBIxFjflWJWanXIb3RllmbCylyMrvgv0=
 github.com/modern-go/reflect2 v1.0.1 h1:9f412s+6RmYXLWZSEzVVgPGK7C2PphHj5RJrvfx9AWI=
 github.com/modern-go/reflect2 v1.0.1/go.mod h1:bx2lNnkwVCuqBIxFjflWJWanXIb3RllmbCylyMrvgv0=
-github.com/pavedroad-io/eventbridge/s3 v0.0.0-20210701165945-56d1465d3dac h1:9VK6j192Exkjfhcs6lFnpLsekn4IbUwrWt39eftHLIE=
-github.com/pavedroad-io/eventbridge/s3 v0.0.0-20210701165945-56d1465d3dac/go.mod h1:+9+9BUtgbMx139HsFzTzIzRFb6KoVNP6AYxlQPmST34=
+github.com/pavedroad-io/eventbridge/s3 v0.0.0-20210701220002-464042583b78 h1:mwjDazE8E4N+nHekB+CbvHDopUW+MkBpFbYFV+60HOw=
+github.com/pavedroad-io/eventbridge/s3 v0.0.0-20210701220002-464042583b78/go.mod h1:+9+9BUtgbMx139HsFzTzIzRFb6KoVNP6AYxlQPmST34=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/rs/xid v1.2.1/go.mod h1:+uKXf+4Djp6Md1KODXJxgGQPKngRmWyn10oCKFzNHOQ=
