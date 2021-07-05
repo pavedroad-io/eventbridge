@@ -1,5 +1,7 @@
 package s3
 
+import "fmt"
+
 // Provider for creating new client
 type Provider struct {
 	// Name AWS, GCP, etc
@@ -26,5 +28,6 @@ func (ps *Providers) Lookup(pName string) (Provider, error) {
 			return p, nil
 		}
 	}
-	return rp, nil
+
+	return rp, fmt.Errorf("Provider lookup failed for %v\n", pName)
 }

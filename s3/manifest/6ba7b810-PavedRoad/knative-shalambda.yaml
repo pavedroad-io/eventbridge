@@ -1,0 +1,27 @@
+
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: eventbridgelambda
+spec:
+  dependencies:
+    - name: eventbridge
+      eventSourceName: eventbridge
+      eventName: eventbridge
+  triggers:
+    - template:
+        name: knative-sha
+        awsLambda:
+          functionName: goautosha
+          accessKey:
+            name: test1
+            key: test2
+          secretKey:
+            name: test1
+            key: test2
+          region: localcluster
+          payload:
+            - src:
+                dependencyName: eventbridge
+                dataKey: body
+              dest: data

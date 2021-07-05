@@ -47,6 +47,7 @@ type LogQueue []LogQueueItem
 type LogQueueItem struct {
 	ID        string    `json:"id"`
 	Bucket    string    `json:"bucket"`
+	Filter    S3Filter  `json:"filter"`
 	Name      string    `json:"name"`
 	Created   time.Time `json:"created"`
 	Location  string    `json:"location"`
