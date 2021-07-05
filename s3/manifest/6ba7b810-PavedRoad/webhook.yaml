@@ -1,0 +1,15 @@
+
+apiVersion: argoproj.io/v1alpha1
+kind: EventSource
+metadata:
+  name: eventbridge
+spec:
+  service:
+    ports:
+      - port: 12001
+        targetPort: 12001
+  webhook:
+    eventbridge:
+      port: "12001"
+      endpoint: eventbridge
+      method: POST

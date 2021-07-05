@@ -14,14 +14,27 @@
           - OBJECT
   providers:
     - name: wasabi
-      credentials: ###########################
-      key: ###########################
+      credentials: test1
+      key: test2
+      region: us-west-1
+      endpoint: s3.us-west-1.wasabisys.com
+    - name: aws-secret
+      credentials: test1
+      key: test2
+      region: us-west-1
+      endpoint: s3.us-west-1.wasabisys.com
+    - name: microk8s-secret
+      credentials: test1
+      key: test2
       region: us-west-1
       endpoint: s3.us-west-1.wasabisys.com
   config:
     name: test1
     version: v0.0.0
     kubectx: microk8s
+    env: dev
+    manifests: ./manifest
+    templates: ./tpl
     hook:
         name: eventbridge
         host: localhost
@@ -41,6 +54,4 @@
         functionName: goautosha
         provider: microk8s-secret
         region: localcluster
-
-
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	"github.com/google/uuid"
 	"gopkg.in/yaml.v2"
@@ -18,6 +19,11 @@ type Customer struct {
 	// ID unique ID for this customer
 	ID uuid.UUID `yaml:"id"`
 
+	// ShortName is the first portion of the UUID
+	// used persisting customer data in a human readable
+	// fashion
+	shortName string `yaml:"short"`
+
 	// Customer Name
 	Name string `yaml:"name"`
 
@@ -29,6 +35,16 @@ type Customer struct {
 
 	// Syncconfiguration
 	Configuration SyncConfiguration `yaml:"config"`
+}
+
+func (c *Customer) ShortName() string {
+	if c.shortName != "" {
+		return c.shortName
+	}
+
+	c.shortName = strings.Split(c.ID.String(), "-")[0]
+
+	return c.shortName
 }
 
 func (c *Customer) LoadFromDisk(file string) ([]Customer, error) {

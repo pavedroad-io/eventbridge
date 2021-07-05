@@ -2,7 +2,7 @@
 Template data is derived from a Sync Configuration
 We need the Hook, the Provider and the LambdaTrigger
 */
-{{define "lambda.tpl}}
+{{define "tpl/lambda.tpl"}}
 apiVersion: argoproj.io/v1alpha1
 kind: Sensor
 metadata:
