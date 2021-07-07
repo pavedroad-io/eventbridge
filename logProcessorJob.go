@@ -81,8 +81,6 @@ func (j *logProcessorJob) Init() error {
 
 func (j *logProcessorJob) Run() (result Result, err error) {
 
-	//fmt.Println(j.Log)
-
 	var plogs s3.ProcessedLogs
 	_log := j.Log
 
@@ -93,11 +91,14 @@ func (j *logProcessorJob) Run() (result Result, err error) {
 			fmt.Printf("Parse failed with error: %w\n", err)
 		}
 
-		var filter s3.S3Filter = s3.S3Filter{
-			MatchedAPI:          []string{"REST"},
-			MatchedHTTPMethods:  []string{"PUT"},
-			MatchedResouceTypes: []string{"OBJECT"},
-		}
+		filter := _log.Filter
+		/*
+			var filter s3.S3Filter = s3.S3Filter{
+				MatchedAPI:          []string{"REST"},
+				MatchedHTTPMethods:  []string{"PUT"},
+				MatchedResouceTypes: []string{"OBJECT"},
+			}
+		*/
 
 		for _, eventData := range loglines {
 			// Parse opertion field and skip if filer doesn't match
@@ -120,7 +121,7 @@ func (j *logProcessorJob) Run() (result Result, err error) {
 				return jrsp.LogErrorResults(j, err)
 			}
 			if resp.StatusCode != 200 {
-				err := fmt.Errorf("HTTP POST failed non 200/201 status code %v\n", resp.StatusCode)
+				err := fmt.Errorf("HTTP POST failed non 200%v\n", resp.StatusCode)
 				jrsp := &logResult{}
 				return jrsp.LogErrorResults(j, err)
 			}
