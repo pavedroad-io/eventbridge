@@ -33,6 +33,8 @@ github.com/klauspost/cpuid/v2 v2.0.1/go.mod h1:FInQzS24/EEf25PyTYn52gqo7WaD8xa02
 github.com/klauspost/cpuid/v2 v2.0.4/go.mod h1:FInQzS24/EEf25PyTYn52gqo7WaD8xa0213Md/qVLRg=
 github.com/klauspost/cpuid/v2 v2.0.7 h1:U89pAFid7wpIWvTFJnMKgU+Sabb7DLEgHI7Xt8apo3Y=
 github.com/klauspost/cpuid/v2 v2.0.7/go.mod h1:FInQzS24/EEf25PyTYn52gqo7WaD8xa0213Md/qVLRg=
+github.com/klauspost/cpuid/v2 v2.0.8 h1:bhR2mgIlno/Sfk4oUbH4sPlc83z1yGrN9bvqiq3C33I=
+github.com/klauspost/cpuid/v2 v2.0.8/go.mod h1:FInQzS24/EEf25PyTYn52gqo7WaD8xa0213Md/qVLRg=
 github.com/kr/pretty v0.1.0 h1:L/CwN0zerZDmRFUapSPitk6f+Q3+0za1rQkzVuMiMFI=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
 github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
@@ -56,6 +58,8 @@ github.com/modern-go/reflect2 v1.0.1 h1:9f412s+6RmYXLWZSEzVVgPGK7C2PphHj5RJrvfx9
 github.com/modern-go/reflect2 v1.0.1/go.mod h1:bx2lNnkwVCuqBIxFjflWJWanXIb3RllmbCylyMrvgv0=
 github.com/pavedroad-io/eventbridge/s3 v0.0.0-20210701220002-464042583b78 h1:mwjDazE8E4N+nHekB+CbvHDopUW+MkBpFbYFV+60HOw=
 github.com/pavedroad-io/eventbridge/s3 v0.0.0-20210701220002-464042583b78/go.mod h1:+9+9BUtgbMx139HsFzTzIzRFb6KoVNP6AYxlQPmST34=
+github.com/pavedroad-io/eventbridge/s3 v0.0.0-20210708202313-3ca06c555868 h1:l0WcoyzI7RlPVr8ira8tidJMBN732lnCSEADvXWqSm0=
+github.com/pavedroad-io/eventbridge/s3 v0.0.0-20210708202313-3ca06c555868/go.mod h1:LaH1OrcttTvXS/Mo10bmvyDR1oJTW35+vLkHzYuOAlc=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/rs/xid v1.2.1/go.mod h1:+uKXf+4Djp6Md1KODXJxgGQPKngRmWyn10oCKFzNHOQ=
