@@ -27,6 +27,7 @@ const (
 	ClientTimeout int = 30
 )
 
+// logProcessorJob type for dispatcher to run
 type logProcessorJob struct {
 	ctx           context.Context `json:"ctx"`
 	JobID         uuid.UUID       `json:"job_id"`
@@ -81,9 +82,7 @@ func (j *logProcessorJob) Init() error {
 
 func (j *logProcessorJob) Run() (result Result, err error) {
 
-	//fmt.Println(j.Log)
-
-	var plogs s3.ProcessedLogs
+	var plogs s3.ProcessedLogs // Tracks logs we've already seen
 	_log := j.Log
 
 	switch _log.LogFormat {
@@ -93,14 +92,10 @@ func (j *logProcessorJob) Run() (result Result, err error) {
 			fmt.Printf("Parse failed with error: %w\n", err)
 		}
 
-		var filter s3.S3Filter = s3.S3Filter{
-			MatchedAPI:          []string{"REST"},
-			MatchedHTTPMethods:  []string{"PUT"},
-			MatchedResouceTypes: []string{"OBJECT"},
-		}
+		filter := _log.Filter
 
 		for _, eventData := range loglines {
-			// Parse opertion field and skip if filer doesn't match
+			// Parse operation field and skip if filer doesn't match
 			opt := eventData.GetOperation()
 			if !opt.FilterLine(eventData, filter) {
 				continue
@@ -108,9 +103,11 @@ func (j *logProcessorJob) Run() (result Result, err error) {
 			eventBytes, _ := json.Marshal(eventData)
 			postBody := bytes.NewBuffer(eventBytes)
 
-			//TODO make host and port configurable
 			resp, err := http.Post(
-				"http://localhost:12001/eventbridge",
+				"http://"+
+					_log.Webhook.Host+":"+
+					_log.Webhook.Port+
+					"/"+_log.Webhook.Name,
 				"application/json",
 				postBody)
 
@@ -120,7 +117,7 @@ func (j *logProcessorJob) Run() (result Result, err error) {
 				return jrsp.LogErrorResults(j, err)
 			}
 			if resp.StatusCode != 200 {
-				err := fmt.Errorf("HTTP POST failed non 200/201 status code %v\n", resp.StatusCode)
+				err := fmt.Errorf("HTTP POST failed non 200%v\n", resp.StatusCode)
 				jrsp := &logResult{}
 				return jrsp.LogErrorResults(j, err)
 			}
