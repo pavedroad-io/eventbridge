@@ -8,6 +8,7 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
+	github.com/klauspost/cpuid/v2 v2.0.8 // indirect
 	github.com/minio/minio-go/v7 v7.0.12
-	github.com/pavedroad-io/eventbridge/s3 v0.0.0-20210707010727-f0e68a35d21a
+	github.com/pavedroad-io/eventbridge/s3 v0.0.0-20210708202313-3ca06c555868
 )

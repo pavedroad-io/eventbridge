@@ -118,6 +118,7 @@ func (j *logQueueJob) Run() (result Result, err error) {
 				item := s3.LogQueueItem{
 					ID:        c.ID.String(),
 					Bucket:    l.Name,
+					Webhook:   c.Configuration.Hook,
 					Filter:    l.FilterEvents,
 					Name:      o.Key,
 					Created:   time.Now(),
