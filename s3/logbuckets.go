@@ -45,15 +45,16 @@ type LogBuckets struct {
 type LogQueue []LogQueueItem
 
 type LogQueueItem struct {
-	ID        string    `json:"id"`
-	Bucket    string    `json:"bucket"`
-	Filter    S3Filter  `json:"filter"`
-	Name      string    `json:"name"`
-	Created   time.Time `json:"created"`
-	Location  string    `json:"location"`
-	LogFormat string    `json:"logFormat"`
-	Processed bool      `json:"processed"`
-	Prune     bool      `json:"prune"`
+	ID        string        `json:"id"`
+	Bucket    string        `json:"bucket"`
+	Webhook   WebHookConfig `json:"webhook"`
+	Filter    S3Filter      `json:"filter"`
+	Name      string        `json:"name"`
+	Created   time.Time     `json:"created"`
+	Location  string        `json:"location"`
+	LogFormat string        `json:"logFormat"`
+	Processed bool          `json:"processed"`
+	Prune     bool          `json:"prune"`
 }
 
 // ProcessedLogs for a given customer
