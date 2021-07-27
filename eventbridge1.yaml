@@ -2,7 +2,7 @@ info:
   api-version: v1
   id: workerPool
   name: httpCollector
-  organization: acme-demo
+  organization: pavedroad-io
   release-status: alpha
   version: 0.0.1
 project:

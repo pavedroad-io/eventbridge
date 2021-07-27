@@ -89,7 +89,7 @@ func (j *logProcessorJob) Run() (result Result, err error) {
 	case s3.S3:
 		loglines, err := s3.ParseS3(_log.Location)
 		if err != nil {
-			fmt.Printf("Parse failed with error: %w\n", err)
+			fmt.Printf("Parse failed with error: %v\n", err)
 		}
 
 		filter := _log.Filter
@@ -112,7 +112,7 @@ func (j *logProcessorJob) Run() (result Result, err error) {
 				postBody)
 
 			if err != nil {
-				log.Printf("HTTP POST failed error %w\n", err)
+				log.Printf("HTTP POST failed error %v\n", err)
 				jrsp := &logResult{}
 				return jrsp.LogErrorResults(j, err)
 			}
@@ -126,14 +126,14 @@ func (j *logProcessorJob) Run() (result Result, err error) {
 		_log.Processed = true
 		if _log.Prune {
 			if err := os.Remove(_log.Location); err != nil {
-				log.Printf("Failed to prune %s error %w\n", _log.Location, err)
+				log.Printf("Failed to prune %s error %v\n", _log.Location, err)
 			}
 
 		}
 
 		nid, err := uuid.Parse(_log.ID)
 		if err != nil {
-			fmt.Printf("Fail converting ID %s to UUID err %w\n", _log.ID, err)
+			fmt.Printf("Fail converting ID %s to UUID err %v\n", _log.ID, err)
 		}
 		pli := s3.ProcessedLogItem{
 			Date:     time.Now(),

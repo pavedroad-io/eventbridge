@@ -142,7 +142,7 @@ func (j *logQueueJob) Run() (result Result, err error) {
 
 	payload, err := json.Marshal(logQueue)
 	if err != nil {
-		fmt.Errorf("Error %w\n", err)
+		fmt.Errorf("Error %v\n", err)
 		return nil, err
 	}
 
