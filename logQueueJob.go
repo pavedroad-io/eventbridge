@@ -7,6 +7,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+
 	"log"
 	"net/url"
 	"time"
@@ -14,6 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/minio/minio-go/v7"
 	"github.com/pavedroad-io/eventbridge/s3"
+	"github.com/pavedroad-io/go-core/logger"
 )
 
 //_ "eventbridge/s3"
@@ -36,8 +38,9 @@ type logQueueJob struct {
 }
 
 type logQueueStats struct {
-	RequestTimedOut bool
-	RequestTime     time.Duration
+	RequestTimedOut  bool
+	RequestStartTime time.Time
+	RequestTime      time.Duration
 }
 
 // Process methods
@@ -70,9 +73,8 @@ func (j *logQueueJob) Run() (result Result, err error) {
 	customers, err := c.LoadFromDisk("customer.yaml")
 	if err != nil {
 		log.Fatalf("fail loading customer.yaml: %v\n", err)
-
 	}
-	fmt.Println(customers)
+
 	opts := minio.ListObjectsOptions{
 		Recursive: true,
 		Prefix:    "",
@@ -89,10 +91,12 @@ func (j *logQueueJob) Run() (result Result, err error) {
 		// uses
 		plist := c.Providers
 
+		// Actually buckets not logs
 		for i, l := range c.Logs {
 			p, err := plist.Lookup(l.Provider)
 			if err != nil {
 				log.Printf("Provider not found: %v\n", err)
+				continue
 			}
 			s3Client, err := s3.NewClient(p)
 			if err != nil {
@@ -104,15 +108,16 @@ func (j *logQueueJob) Run() (result Result, err error) {
 			}
 
 			for _, o := range objects {
-
-				f, err := s3.GetObject(s3Client, l.Name, o.Key, minio.GetObjectOptions{})
-				if err != nil {
-					log.Fatalln(err)
+				if plogs.Processed(l.Name, o.Key) {
+					continue
 				}
 
-				if plogs.Processed(l.Name, o.Key) {
-					// fmt.Printf("Skipping %s bucket %s logs\n", l.Name, o.Key)
-					continue
+				/// create new stats object
+				j.Stats.RequestStartTime = time.Now()
+				f, err := s3.GetObject(s3Client, l.Name, o.Key, minio.GetObjectOptions{})
+				if err != nil {
+					j.Stats.RequestTimedOut = true
+					log.Fatalln(err)
 				}
 
 				item := s3.LogQueueItem{
@@ -127,12 +132,16 @@ func (j *logQueueJob) Run() (result Result, err error) {
 					Processed: false,
 					Prune:     c.Logs[i].PruneAfterProcessing,
 				}
+				// send item to kafka
+				jitem, _ := json.Marshal(item)
+				logger.Printf(string(jitem))
 				// Write new Job to dispatcher Job
 				// Channel
 				nj := &logProcessorJob{}
 				nj.Init()
 				nj.Log = item
 
+				j.Stats.RequestTime = time.Now().Sub(j.Stats.RequestStartTime)
 				j.schedulerJobChan <- nj
 
 				logQueue = append(logQueue, item)
@@ -142,7 +151,7 @@ func (j *logQueueJob) Run() (result Result, err error) {
 
 	payload, err := json.Marshal(logQueue)
 	if err != nil {
-		fmt.Errorf("Error %w\n", err)
+		fmt.Errorf("Error %v\n", err)
 		return nil, err
 	}
 

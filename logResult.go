@@ -34,7 +34,7 @@ func (r *logResult) Decode() (Job, error) {
 		return nil, err
 	}
 
-	ne := fmt.Errorf("Unknown job type: ", r.jobType)
+	ne := fmt.Errorf("Unknown job type: %v", r.jobType)
 	return nil, ne
 }
 

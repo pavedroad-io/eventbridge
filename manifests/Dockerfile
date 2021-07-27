@@ -21,6 +21,7 @@ ENV pavedroadbin $pavedroad/$ms
 RUN mkdir -p ${pavedroad}/logs
 WORKDIR ${pavedroad}
 COPY $ms $pavedroad
+COPY customer.yaml $pavedroad
 
 EXPOSE 8081
 CMD ["/bin/sh", "-c", "$pavedroadbin"]
