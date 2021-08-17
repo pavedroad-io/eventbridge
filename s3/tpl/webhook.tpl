@@ -6,9 +6,9 @@ apiVersion: argoproj.io/v1alpha1
 kind: EventSource
 metadata:
   name: {{.HookData.Name}}
-  label:
+  labels:
   {{- range .LabelData}}
-    - {{.}}
+    {{.Key}}: "{{.Value}}"
   {{- end}}
 spec:
   service:
