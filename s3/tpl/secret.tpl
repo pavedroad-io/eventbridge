@@ -4,8 +4,9 @@ kind: Secret
 metadata:
   name: {{.Provider.Name}}
   lables:
-  - customer: {{.ID}}
-  - environment: {{.Environment}}
+  {{- range .Labels }}
+    - {{.}}
+  {{- end}}
 type: Opaque
 data:
   accesskey: {{.Provider.Credentials}}

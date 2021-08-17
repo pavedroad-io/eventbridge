@@ -21,8 +21,12 @@ func TestLoadCustomers(t *testing.T) {
 
 func TestGenerateManifests(t *testing.T) {
 	customerList, _ := customer.LoadFromDisk("customer.yaml")
-	//fmt.Println(customerList)
+	caller := SyncInitiator{
+		CustomerID:         "1234",
+		UserID:             "5678",
+		AuthorizationToken: "none",
+		ReferenceID:        "none"}
 	for _, c := range customerList {
-		c.Configuration.GenerateManifests(&c)
+		c.Configuration.GenerateManifests(&c, caller)
 	}
 }

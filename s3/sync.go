@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"reflect"
 )
 
 const (
@@ -27,6 +28,7 @@ type secret struct {
 	Provider    Provider
 	ID          string
 	Environment string
+	Labels      []string
 }
 
 // lambda data for building a lambda function template
@@ -34,6 +36,7 @@ type lambda struct {
 	Provider      Provider
 	Hook          WebHookConfig
 	LambdaTrigger LambdaTrigger
+	Labels        []string
 }
 
 var argoSupportedEvents []argoManifests = []argoManifests{
@@ -93,10 +96,46 @@ type SyncConfiguration struct {
 	TemplateDirctory string `yaml:"templates"`
 }
 
+// SyncInitiator
+//  Is used to label generated structures and authenticate
+//  synchronization requests if required
+type SyncInitiator struct {
+	// Mandatory
+	// CustomerID
+	CustomerID string
+
+	// UserID requesting sync
+	UserID string
+
+	// Optional
+	// AuthorizationToken
+	AuthorizationToken string
+
+	// ReferenceID
+	ReferenceID string
+}
+
+func (si *SyncInitiator) GenerateLables() []string {
+	var labels []string
+
+	v := reflect.ValueOf(*si)
+
+	for i := 0; i < v.NumField(); i++ {
+		fieldValue := v.Field(i)
+		fieldType := v.Type().Field(i)
+		fieldName := fieldType.Name
+		l := fmt.Sprintf("%v:%v", fieldName, fieldValue)
+		labels = append(labels, l)
+	}
+	return labels
+}
+
 // GenerateManifests
-func (sc *SyncConfiguration) GenerateManifests(cf *Customer) {
+func (sc *SyncConfiguration) GenerateManifests(cf *Customer, caller SyncInitiator) {
 	var argoTemplates *template.Template
 	var tplFiles []string
+	labels := caller.GenerateLables()
+
 	for _, t := range argoSupportedEvents {
 		tplFiles = append(tplFiles, filepath.Join(sc.TemplateDirctory, t.TemplateFile))
 	}
@@ -128,7 +167,15 @@ func (sc *SyncConfiguration) GenerateManifests(cf *Customer) {
 	}
 
 	bw := bufio.NewWriter(file)
-	err = argoTemplates.ExecuteTemplate(bw, filepath.Join(sc.TemplateDirctory, man.TemplateFile), &sc.Hook)
+	tplData := struct {
+		HookData  WebHookConfig
+		LabelData []string
+	}{
+		HookData:  sc.Hook,
+		LabelData: labels,
+	}
+	// err = argoTemplates.ExecuteTemplate(bw, filepath.Join(sc.TemplateDirctory, man.TemplateFile), &sc.Hook)
+	err = argoTemplates.ExecuteTemplate(bw, filepath.Join(sc.TemplateDirctory, man.TemplateFile), &tplData)
 	if err != nil {
 		fmt.Errorf("Failed to create webhook manifest %v\n", sc.Hook)
 	}
@@ -159,6 +206,7 @@ func (sc *SyncConfiguration) GenerateManifests(cf *Customer) {
 			Provider:    p,
 			ID:          cf.ID.String(),
 			Environment: cf.Configuration.Environment,
+			Labels:      labels,
 		}
 		err = argoTemplates.ExecuteTemplate(bw, filepath.Join(sc.TemplateDirctory, man.TemplateFile), &data)
 		if err != nil {
@@ -197,6 +245,7 @@ func (sc *SyncConfiguration) GenerateManifests(cf *Customer) {
 			Provider:      p,
 			Hook:          cf.Configuration.Hook,
 			LambdaTrigger: l,
+			Labels:        labels,
 		}
 
 		err = argoTemplates.ExecuteTemplate(bw, filepath.Join(sc.TemplateDirctory, man.TemplateFile), &data)

@@ -5,15 +5,19 @@ Template data is from a SyncConfiguration
 apiVersion: argoproj.io/v1alpha1
 kind: EventSource
 metadata:
-  name: {{.Name}}
+  name: {{.HookData.Name}}
+  label:
+  {{- range .LabelData}}
+    - {{.}}
+  {{- end}}
 spec:
   service:
     ports:
-      - port: {{.Port}}
-        targetPort: {{.Port}}
+      - port: {{.HookData.Port}}
+        targetPort: {{.HookData.Port}}
   webhook:
     eventbridge:
-      port: "{{.Port}}"
-      endpoint: {{.Name}}
+      port: "{{.HookData.Port}}"
+      endpoint: {{.HookData.Name}}
       method: POST
 {{end}}

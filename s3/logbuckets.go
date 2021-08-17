@@ -60,27 +60,27 @@ type LogQueueItem struct {
 // ProcessedLogs for a given customer
 type ProcessedLogs struct {
 	// ID customer ID
-	ID uuid.UUID
+	ID uuid.UUID `json:"id"`
 	// Processed list of processed logs
-	ProcessedItems []ProcessedLogItem
+	ProcessedItems []ProcessedLogItem `json:"processedItems"`
 }
 
 // ProcessedLogItem information on a processed log
 type ProcessedLogItem struct {
 	// Date log was processed
-	Date time.Time
+	Date time.Time `json:"date"`
 
 	// Name of bucket containing the log
-	Bucket string
+	Bucket string `json:"bucket"`
 
 	// Name of log in the bucket
-	Name string
+	Name string `json:"name"`
 
 	// FileName of downloaded log
-	FileName string
+	FileName string `json:"fileName"`
 
 	// Pruned if log was delete, FileName, after processing
-	Pruned bool
+	Pruned bool `json:"pruned"`
 }
 
 // Processed returns true if we've processed this log before

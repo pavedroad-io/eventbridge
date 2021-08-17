@@ -42,7 +42,7 @@
     dependencies:
       name: eventbridge-dep
       eventSourceName: eventbridge
-      eventName: eventbride
+      eventName: eventbridge
     triggers:
       lambda:
       - name: automd5

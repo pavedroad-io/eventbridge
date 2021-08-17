@@ -3,6 +3,11 @@ apiVersion: argoproj.io/v1alpha1
 kind: Sensor
 metadata:
   name: eventbridgelambda
+  lables:
+    - CustomerID:1234
+    - UserID:5678
+    - AuthorizationToken:none
+    - ReferenceID:none
 spec:
   dependencies:
     - name: eventbridge
