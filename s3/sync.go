@@ -2,10 +2,12 @@ package s3
 
 import (
 	"bufio"
+	"encoding/base64"
 	"fmt"
 	"html/template"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"reflect"
 )
@@ -15,6 +17,11 @@ const (
 	argoSourceWebhook = "webhook"
 	argoSyncLambda    = "lambda"
 )
+
+type Label struct {
+	Key   string
+	Value string
+}
 
 type argoManifests struct {
 	Name         string `yaml:"name"`
@@ -28,7 +35,7 @@ type secret struct {
 	Provider    Provider
 	ID          string
 	Environment string
-	Labels      []string
+	Labels      []Label
 }
 
 // lambda data for building a lambda function template
@@ -36,7 +43,11 @@ type lambda struct {
 	Provider      Provider
 	Hook          WebHookConfig
 	LambdaTrigger LambdaTrigger
-	Labels        []string
+	Labels        []Label
+}
+
+type argoKinds struct {
+	Kind string
 }
 
 var argoSupportedEvents []argoManifests = []argoManifests{
@@ -52,6 +63,13 @@ var argoSupportedEvents []argoManifests = []argoManifests{
 		TemplateFile: "lambda.tpl",
 		OutputFile:   "lambda.yaml",
 		Type:         argoSyncLambda},
+}
+
+// Argo kinds to  manage
+var argoSupportedKinds []argoKinds = []argoKinds{
+	{Kind: "Secret"},
+	{Kind: "EventSource"},
+	{Kind: "Sensor"},
 }
 
 // GetManifest returns an argoManifest for a given type
@@ -115,16 +133,19 @@ type SyncInitiator struct {
 	ReferenceID string
 }
 
-func (si *SyncInitiator) GenerateLables() []string {
-	var labels []string
+func (si *SyncInitiator) GenerateLables() []Label {
+	var labels []Label
 
 	v := reflect.ValueOf(*si)
 
 	for i := 0; i < v.NumField(); i++ {
+		l := Label{}
 		fieldValue := v.Field(i)
 		fieldType := v.Type().Field(i)
 		fieldName := fieldType.Name
-		l := fmt.Sprintf("%v:%v", fieldName, fieldValue)
+		//		&#34;
+		l.Key = string(fieldName)
+		l.Value = fieldValue.String()
 		labels = append(labels, l)
 	}
 	return labels
@@ -169,7 +190,7 @@ func (sc *SyncConfiguration) GenerateManifests(cf *Customer, caller SyncInitiato
 	bw := bufio.NewWriter(file)
 	tplData := struct {
 		HookData  WebHookConfig
-		LabelData []string
+		LabelData []Label
 	}{
 		HookData:  sc.Hook,
 		LabelData: labels,
@@ -201,6 +222,8 @@ func (sc *SyncConfiguration) GenerateManifests(cf *Customer, caller SyncInitiato
 		if err != nil {
 			log.Fatal(err, fn)
 		}
+		p.Credentials = base64.StdEncoding.EncodeToString([]byte(p.Credentials))
+		p.Key = base64.StdEncoding.EncodeToString([]byte(p.Key))
 		bw := bufio.NewWriter(file)
 		data := secret{
 			Provider:    p,
@@ -262,6 +285,95 @@ func (sc *SyncConfiguration) GenerateManifests(cf *Customer, caller SyncInitiato
 				file.Name(), err)
 		}
 	}
+}
+
+// DeployManifests to using the Kubectx provided
+func (sc *SyncConfiguration) DeployManifests(cf *Customer, caller SyncInitiator) (data []byte, err error) {
+	var kubecmd = []string{}
+	location, _ := filepath.Abs(filepath.Join(sc.ManifestDirectory + "/" + cf.ShortName() + "-" + cf.Name))
+
+	if sc.Kubectx != "" {
+		kubecmd = append(kubecmd, "--context")
+		kubecmd = append(kubecmd, sc.Kubectx)
+	}
+	kubecmd = append(kubecmd, "apply")
+	kubecmd = append(kubecmd, "-f")
+	kubecmd = append(kubecmd, location)
+	kubecmd = append(kubecmd, "-o")
+	kubecmd = append(kubecmd, "json")
+
+	data, err = sc.KubeExec(kubecmd...)
+
+	if err != nil {
+		return nil, err
+	}
+	return data, err
+}
+
+// DeleteDeployment to using the Kubectx provided
+func (sc *SyncConfiguration) DeleteDeployment(cf *Customer, caller SyncInitiator) (data []byte, err error) {
+	var kubecmd = []string{}
+	location, _ := filepath.Abs(filepath.Join(sc.ManifestDirectory + "/" + cf.ShortName() + "-" + cf.Name))
+
+	if sc.Kubectx != "" {
+		kubecmd = append(kubecmd, "--context")
+		kubecmd = append(kubecmd, sc.Kubectx)
+	}
+	kubecmd = append(kubecmd, "delete")
+	kubecmd = append(kubecmd, "-f")
+	kubecmd = append(kubecmd, location)
+	kubecmd = append(kubecmd, "-o")
+	kubecmd = append(kubecmd, "name")
+
+	data, err = sc.KubeExec(kubecmd...)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return data, err
+}
+
+func (sc *SyncConfiguration) KubeExec(options ...string) (data []byte, err error) {
+	data, err = exec.Command("kubectl", options...).Output()
+	if err != nil {
+		fmt.Println("Error executing kubectl: ", err)
+		return nil, err
+	}
+	return data, nil
+}
+
+// GetDeployments to using the Kubectx provided
+func (sc *SyncConfiguration) GetDeployments(cf *Customer, caller SyncInitiator) (data []byte, err error) {
+	var kubecmd = []string{}
+
+	if sc.Kubectx != "" {
+		kubecmd = append(kubecmd, "--context")
+		kubecmd = append(kubecmd, sc.Kubectx)
+	}
+	kubecmd = append(kubecmd, "get")
+	l := len(argoSupportedKinds)
+	var resourceKinds string
+	for i, v := range argoSupportedKinds {
+		resourceKinds += v.Kind
+		if i != l-1 {
+			resourceKinds += ","
+		}
+	}
+
+	kubecmd = append(kubecmd, resourceKinds)
+	kubecmd = append(kubecmd, "-l")
+	kubecmd = append(kubecmd, "CustomerID="+caller.CustomerID)
+	kubecmd = append(kubecmd, "-o")
+	kubecmd = append(kubecmd, "json")
+
+	data, err = sc.KubeExec(kubecmd...)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return data, err
 }
 
 type WebHookConfig struct {

@@ -1,3 +1,4 @@
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
@@ -5,32 +6,15 @@
 *.so
 *.dylib
 
-# Test binary, built with `go test -c`
+# Test binary, build with `go test -c`
 *.test
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
-# Output of eventbridge
-*processed.yaml
-
-# Dependency directories (remove the comment below to include it)
-# vendor/
-#
-logs
-builds
-
-# Output of builds
-eventbridge
-docker-build
-
-# Output of initialization and tests
-.fossa.yml
-.pr_git_initialize_file
-.pr_preflight_check
-.scannerwork
-assets/images/eventbridge.png
-docs
-
-# Temporary directories with test files, etc.
-*.d
+/builds/*
+/vendor/*
+/volumes/*
+/artifacts/*
+/.templates/*
+/.scannerwork/*

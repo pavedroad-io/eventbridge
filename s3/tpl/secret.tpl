@@ -3,9 +3,9 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: {{.Provider.Name}}
-  lables:
+  labels:
   {{- range .Labels }}
-    - {{.}}
+    {{.Key}}: "{{.Value}}"
   {{- end}}
 type: Opaque
 data:

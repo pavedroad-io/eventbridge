@@ -6,6 +6,10 @@ info:
   release-status: alpha
   version: 0.0.1
 project:
+  blocks:
+  - id: cache://io.pavedroad.blocks/microservice/manifests/kubernetes/argo-events/argo.yaml
+  - id: cache://io.pavedroad.blocks/microservice/manifests/kubernetes/kustomize-stag.yaml
+  - id: cache://io.pavedroad.blocks/microservice/manifests/skaffold/skaffold-stag-aws.yaml
   kubernetes:
     namespace: pavedroad
     liveness: liveness

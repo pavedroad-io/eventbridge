@@ -20,6 +20,7 @@ PREFLIGHT := .pr_preflight_check
 # Go related variables.
 GOBASE := $(shell cd ../../;pwd)
 GOPATH := $(GOBASE)
+export DOCKER_IP = `(dev/getdockerip.sh)`
 GOBIN := $(GOBASE)/bin
 GOFILES := $(wildcard *.go)
 GOLINT := $(shell which golint)
@@ -211,9 +212,9 @@ help: Makefile
 	@echo
 
 ## docker-build: Build docker images for use with docker-compose
-docker-build: eventbridge customer.yaml manifests/Dockerfile
-	docker build -f manifests/Dockerfile -t pavedroad-io/eventbridge .
-	touch docker-build
+docker-build:
+	docker build -f manifests/Dockerfile -t acme-demo/eventbridge .
+	docker build -f manifests/Dockerfile -t acme-demo/eventbridgeinitdb .
 
 ## up: Start service using docker-compose
 up: dbclean docker-build
@@ -239,11 +240,12 @@ $(DOCS):
 $(LOGS):
 	$(shell mkdir -p $(LOGS))
 
-# Null target as no db now
-dbclean: ;
+# Null target for roadctl
+dbclean:
+	@echo ""
 
 ## Preflight ensure all requirements are met
-## Once they are the $(PREFLIGHT) file will be created
+## Once they are the $(PREFLIGH) file will be created
 $(PREFLIGHT):
 	dev/preflight.sh
 

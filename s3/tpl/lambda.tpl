@@ -7,9 +7,9 @@ apiVersion: argoproj.io/v1alpha1
 kind: Sensor
 metadata:
   name: eventbridgelambda
-  lables:
+  labels:
   {{- range .Labels }}
-    - {{.}}
+    {{.Key}}: "{{.Value}}"
   {{- end}}
 spec:
   dependencies:
