@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/google/uuid v1.2.0
+	github.com/iancoleman/strcase v0.2.0 // indirect
 	github.com/json-iterator/go v1.1.11 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.7 // indirect
 	github.com/minio/md5-simd v1.1.2 // indirect

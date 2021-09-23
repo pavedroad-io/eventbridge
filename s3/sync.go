@@ -10,17 +10,21 @@ import (
 	"os/exec"
 	"path/filepath"
 	"reflect"
+	"strings"
+
+	"github.com/iancoleman/strcase"
 )
 
 const (
 	argok8sSecret     = "secret"
 	argoSourceWebhook = "webhook"
 	argoSyncLambda    = "lambda"
+	argoNameSpace     = "argo-events"
 )
 
 type Label struct {
-	Key   string
-	Value string
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 type argoManifests struct {
@@ -32,18 +36,18 @@ type argoManifests struct {
 
 // secret data for building a secret template
 type secret struct {
-	Provider    Provider
-	ID          string
-	Environment string
-	Labels      []Label
+	Provider    Provider `json:"provider"`
+	ID          string   `json:"id"`
+	Environment string   `json:"environment"`
+	Labels      []Label  `json:"labels"`
 }
 
 // lambda data for building a lambda function template
 type lambda struct {
-	Provider      Provider
-	Hook          WebHookConfig
-	LambdaTrigger LambdaTrigger
-	Labels        []Label
+	Provider      Provider      `json:"provider"`
+	Hook          WebHookConfig `json:"hook"`
+	LambdaTrigger LambdaTrigger `json:"lambdaTrigger"`
+	Labels        []Label       `json:"labels"`
 }
 
 type argoKinds struct {
@@ -86,32 +90,32 @@ func GetArgoManifest(ml []argoManifests, mtype string) (man argoManifests, err e
 
 type SyncConfiguration struct {
 	// Name of this sync configuration
-	Name string `yaml:"name"`
+	Name string `yaml:"name" json:"name"`
 
 	// Environment of this sync configuration
-	Environment string `yaml:"env"`
+	Environment string `yaml:"env" json:"environment"`
 
 	// Version of this configuration
-	Version string `yaml:"version"`
+	Version string `yaml:"version" json:"version"`
 
 	// Hook web hook to post events to
-	Hook WebHookConfig `yaml:"hook"`
+	Hook WebHookConfig `yaml:"hook" json:"hook"`
 
 	// TODO: Move to environment
-	Kubectx string `yaml:"kubectx"`
+	Kubectx string `yaml:"kubectx" json:"kubectx"`
 
 	// Dependencies for triggers to listen for
 	//  Basically the name of the webhook
-	Dependencies Dependencies `yaml:"dependencies"`
+	Dependencies Dependencies `yaml:"dependencies" json:"dependencies"`
 
 	// Triggers to fire for sync event
-	Triggers Triggers `yaml:"triggers"`
+	Triggers Triggers `yaml:"triggers" json:"triggers"`
 
 	// ManifestDirectory to save manifests in
-	ManifestDirectory string `yaml:"manifests"`
+	ManifestDirectory string `yaml:"manifests" json:"manifests"`
 
 	// TemplateDirctory to load templates from
-	TemplateDirctory string `yaml:"templates"`
+	TemplateDirctory string `yaml:"templates" json:"templates"`
 }
 
 // SyncInitiator
@@ -124,6 +128,9 @@ type SyncInitiator struct {
 
 	// UserID requesting sync
 	UserID string
+
+	// ConfID configuration being synced
+	ConfID string
 
 	// Optional
 	// AuthorizationToken
@@ -145,7 +152,7 @@ func (si *SyncInitiator) GenerateLables() []Label {
 		fieldName := fieldType.Name
 		//		&#34;
 		l.Key = string(fieldName)
-		l.Value = fieldValue.String()
+		l.Value = strings.ToLower(fieldValue.String())
 		labels = append(labels, l)
 	}
 	return labels
@@ -157,20 +164,22 @@ func (sc *SyncConfiguration) GenerateManifests(cf *Customer, caller SyncInitiato
 	var tplFiles []string
 	labels := caller.GenerateLables()
 
+	fmt.Println("template directory: ", sc.TemplateDirctory)
 	for _, t := range argoSupportedEvents {
 		tplFiles = append(tplFiles, filepath.Join(sc.TemplateDirctory, t.TemplateFile))
 	}
+	fmt.Println("template files: ", tplFiles)
 
-	argoTemplates, err := template.New("").ParseFiles(tplFiles...)
+	argoTemplates, err := template.New("").Funcs(stringFunctionMap()).ParseFiles(tplFiles...)
 	if err != nil {
 		fmt.Println("Argo template parsing failed: ", err)
 	}
 
 	// Break customers into different directories using a short UUID + Name
-	sc.ManifestDirectory = filepath.Join(sc.ManifestDirectory + "/" + cf.ShortName() + "-" + cf.Name)
+	mandir := filepath.Join(sc.ManifestDirectory + "/" + cf.ShortName() + "-" + cf.Name)
 
 	mode := int(0755)
-	os.MkdirAll(sc.ManifestDirectory, os.FileMode(mode))
+	os.MkdirAll(mandir, os.FileMode(mode))
 	var defaultMode os.FileMode = 0660
 
 	// Generate sources
@@ -181,7 +190,7 @@ func (sc *SyncConfiguration) GenerateManifests(cf *Customer, caller SyncInitiato
 		fmt.Errorf("Failed to find webhook source template\n")
 	}
 
-	fn := filepath.Join(sc.ManifestDirectory, man.OutputFile)
+	fn := filepath.Join(mandir, man.OutputFile)
 	file, err := os.OpenFile(fn, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, defaultMode)
 	if err != nil {
 		log.Fatal(err, fn)
@@ -195,7 +204,6 @@ func (sc *SyncConfiguration) GenerateManifests(cf *Customer, caller SyncInitiato
 		HookData:  sc.Hook,
 		LabelData: labels,
 	}
-	// err = argoTemplates.ExecuteTemplate(bw, filepath.Join(sc.TemplateDirctory, man.TemplateFile), &sc.Hook)
 	err = argoTemplates.ExecuteTemplate(bw, filepath.Join(sc.TemplateDirctory, man.TemplateFile), &tplData)
 	if err != nil {
 		fmt.Errorf("Failed to create webhook manifest %v\n", sc.Hook)
@@ -217,7 +225,7 @@ func (sc *SyncConfiguration) GenerateManifests(cf *Customer, caller SyncInitiato
 		fmt.Errorf("Failed to read template %v\n", err)
 	}
 	for _, p := range cf.Providers {
-		fn := filepath.Join(sc.ManifestDirectory, p.Name+man.OutputFile)
+		fn := filepath.Join(mandir, p.Name+man.OutputFile)
 		file, err := os.OpenFile(fn, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, defaultMode)
 		if err != nil {
 			log.Fatal(err, fn)
@@ -231,7 +239,7 @@ func (sc *SyncConfiguration) GenerateManifests(cf *Customer, caller SyncInitiato
 			Environment: cf.Configuration.Environment,
 			Labels:      labels,
 		}
-		err = argoTemplates.ExecuteTemplate(bw, filepath.Join(sc.TemplateDirctory, man.TemplateFile), &data)
+		err = argoTemplates.Funcs(stringFunctionMap()).ExecuteTemplate(bw, filepath.Join(sc.TemplateDirctory, man.TemplateFile), &data)
 		if err != nil {
 			fmt.Errorf("Failed to create webhook manifest %v\n", sc.Hook)
 		}
@@ -253,7 +261,7 @@ func (sc *SyncConfiguration) GenerateManifests(cf *Customer, caller SyncInitiato
 		fmt.Errorf("Failed to read template %v\n", err)
 	}
 	for _, l := range sc.Triggers.Lambda {
-		fn := filepath.Join(sc.ManifestDirectory, l.Name+man.OutputFile)
+		fn := filepath.Join(mandir, l.Name+man.OutputFile)
 		file, err := os.OpenFile(fn, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, defaultMode)
 		if err != nil {
 			log.Fatal(err, fn)
@@ -271,7 +279,7 @@ func (sc *SyncConfiguration) GenerateManifests(cf *Customer, caller SyncInitiato
 			Labels:        labels,
 		}
 
-		err = argoTemplates.ExecuteTemplate(bw, filepath.Join(sc.TemplateDirctory, man.TemplateFile), &data)
+		err = argoTemplates.Funcs(stringFunctionMap()).ExecuteTemplate(bw, filepath.Join(sc.TemplateDirctory, man.TemplateFile), &data)
 		if err != nil {
 			fmt.Errorf("Failed to create lambda manifest %v\n", sc.Hook)
 		}
@@ -296,6 +304,9 @@ func (sc *SyncConfiguration) DeployManifests(cf *Customer, caller SyncInitiator)
 		kubecmd = append(kubecmd, "--context")
 		kubecmd = append(kubecmd, sc.Kubectx)
 	}
+
+	kubecmd = append(kubecmd, "--namespace")
+	kubecmd = append(kubecmd, argoNameSpace)
 	kubecmd = append(kubecmd, "apply")
 	kubecmd = append(kubecmd, "-f")
 	kubecmd = append(kubecmd, location)
@@ -313,12 +324,26 @@ func (sc *SyncConfiguration) DeployManifests(cf *Customer, caller SyncInitiator)
 // DeleteDeployment to using the Kubectx provided
 func (sc *SyncConfiguration) DeleteDeployment(cf *Customer, caller SyncInitiator) (data []byte, err error) {
 	var kubecmd = []string{}
-	location, _ := filepath.Abs(filepath.Join(sc.ManifestDirectory + "/" + cf.ShortName() + "-" + cf.Name))
+	conf := strings.Split(caller.ConfID, "-")[0]
+	var name = "default"
+	if cf.Name != "" {
+		name = cf.Name
+	}
+	// TODO: fix this
+	location, _ := filepath.Abs(filepath.Join("./manifest/" + conf + "-" + name))
+
+	_, err = os.Stat(location)
+	if os.IsNotExist(err) {
+		return []byte("No deployment to delete: " + location), nil
+	}
 
 	if sc.Kubectx != "" {
 		kubecmd = append(kubecmd, "--context")
 		kubecmd = append(kubecmd, sc.Kubectx)
 	}
+	kubecmd = append(kubecmd, "--namespace")
+	kubecmd = append(kubecmd, argoNameSpace)
+
 	kubecmd = append(kubecmd, "delete")
 	kubecmd = append(kubecmd, "-f")
 	kubecmd = append(kubecmd, location)
@@ -337,9 +362,16 @@ func (sc *SyncConfiguration) DeleteDeployment(cf *Customer, caller SyncInitiator
 func (sc *SyncConfiguration) KubeExec(options ...string) (data []byte, err error) {
 	data, err = exec.Command("kubectl", options...).Output()
 	if err != nil {
+		log.Println("Error executing kubectl: ", err)
+		log.Println("Options: ", options)
 		fmt.Println("Error executing kubectl: ", err)
+		fmt.Println("Options: ", options)
 		return nil, err
 	}
+	fmt.Println("Options: ", options)
+	fmt.Println("Data: ", string(data))
+	log.Println("Options: ", options)
+	log.Println("Data: ", string(data))
 	return data, nil
 }
 
@@ -360,6 +392,8 @@ func (sc *SyncConfiguration) GetDeployments(cf *Customer, caller SyncInitiator) 
 			resourceKinds += ","
 		}
 	}
+	kubecmd = append(kubecmd, "--namespace")
+	kubecmd = append(kubecmd, argoNameSpace)
 
 	kubecmd = append(kubecmd, resourceKinds)
 	kubecmd = append(kubecmd, "-l")
@@ -408,4 +442,63 @@ type Dependencies struct {
 	Name            string `yaml:"name"`
 	EventSourceName string `yaml:"eventSourceName"`
 	EventName       string `yaml:"eventName"`
+}
+
+// Template function maps
+//
+func stringFunctionMap() template.FuncMap {
+	stringFuncMap := template.FuncMap{
+		"ToUpper":    strings.ToUpper,
+		"ToLower":    strings.ToLower,
+		"ToCamel":    strcase.ToCamel,
+		"ToSnake":    strcase.ToSnake,
+		"Base64":     Encode64,
+		"RFC1123":    RFC1123,
+		"ValidValue": ValidK8sValue,
+	}
+	return stringFuncMap
+}
+
+// ValidK8sValue converts strings to rfc1123
+// and add quotes if it an integer
+func ValidK8sValue(inputStr string) string {
+	return RFC1123(inputStr)
+}
+
+// RFC1123 & 1035 is sanity check for label names used in
+// docker and k8s
+// - contain at most 63 characters
+// - contain only lowercase alphanumeric characters or '-'
+// - start with an alphanumeric character
+// - end with an alphanumeric character
+func RFC1123(inputStr string) string {
+	// Map to lowercase
+	tmpStr := strings.ToLower(inputStr)
+
+	// only allow rfc compliant characters to lowercase
+	dash := rune('-')
+	var na rune
+	rfc := func(r rune) rune {
+		switch {
+		case r >= '0' && r <= '9':
+			return r
+		case r >= 'a' && r <= 'z':
+			return r
+		case r == dash:
+			return r
+		}
+		return na
+	}
+	tmpStr = strings.Map(rfc, tmpStr)
+	if len(tmpStr) > 63 {
+		fmt.Println("first 63 chars:", tmpStr)
+		return tmpStr[0:62]
+	} else {
+		return tmpStr
+	}
+}
+
+// Encode64 for encoding secrets in manifests
+func Encode64(inputStr string) string {
+	return base64.StdEncoding.EncodeToString([]byte(inputStr))
 }
