@@ -1,0 +1,5 @@
+loadFrom: network
+environmentName: dev
+eventBridgeConfigURL: http://localhost:8081/api/v1/namespace/pavedroad/customers/
+configFile: customers.yaml
+

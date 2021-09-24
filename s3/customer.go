@@ -1,8 +1,11 @@
 package s3
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
+	"net/http"
 	"os"
 	"strings"
 
@@ -73,6 +76,37 @@ func (c *Customer) LoadFromDisk(file string) ([]Customer, error) {
 	if err != nil {
 		fmt.Println("Unmarshal faild", err)
 		return nil, err
+	}
+
+	return cl, nil
+}
+
+func (c *Customer) LoadFromNetwork(url string) ([]Customer, error) {
+	cl := []Customer{}
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		fmt.Println("New Request faild", err)
+	}
+
+	req.Header.Add("content-type", "application/json")
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		fmt.Println("Do failed", err)
+	}
+
+	defer res.Body.Close()
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		fmt.Println("Reading res.Body failed", err)
+	}
+
+	if err := json.Unmarshal(body, &cl); err != nil {
+		fmt.Println("Unmarshall failed: ", err)
+		log.Println("Unmarshall failed: ", err)
+		return cl, err
 	}
 
 	return cl, nil

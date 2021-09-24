@@ -11,7 +11,7 @@
   ],
   "swagger": "2.0",
   "info": {
-    "description": "Micro service for managing a pool of workers\n\nA scheduler go routine writes jobs to be performed to\na dispatcher.  The dispatcher manages and forwards jobs\nto a number N number of workers using a buffered channel.\n\nWorkers read the jobs, perform the tasks, and log the \nresults. The log code, logs to one or more configured\ndestinations.  This can include local file system, stdout,\nor a Kafka topic.\n\nJobs, Scheduler, are both defined as interfaces enabling\nthem to be customized to specific tasks.",
+    "description": "Micro service for managing a pool of workers\n\nA scheduler go routine writes jobs to be performed to\na dispatcher.  The dispatcher manages and forwards jobs\nto a number N number of workers using a buffered channel.\n\nWorkers read the jobs, perform the tasks, and log the\nresults. The log code, logs to one or more configured\ndestinations.  This can include local file system, stdout,\nor a Kafka topic.\n\nJobs, Scheduler, are both defined as interfaces enabling\nthem to be customized to specific tasks.",
     "title": "eventbridge API.",
     "termsOfService": "there are no TOS at this moment, use at your own risk we take no responsibility",
     "contact": {

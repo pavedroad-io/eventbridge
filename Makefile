@@ -30,7 +30,7 @@ GOCOVERAGE := $(ARTIFACTS)/coverage.out
 GOLINTREPORT := $(ARTIFACTS)/lint.out
 GOSECREPORT := $(ARTIFACTS)/gosec.out
 GOVETREPORT := $(ARTIFACTS)/govet.out
-GOTESTREPORT := https://sonarcloud.io/dashboard?id=PavedRoad_eventbridge
+GOTESTREPORT := https://sonarcloud.io/dashboard?id=pavedroad-io_eventbridge
 
 GIT_TAG := $(shell git describe)
 
