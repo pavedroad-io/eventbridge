@@ -18,7 +18,6 @@ import (
 	"github.com/pavedroad-io/go-core/logger"
 )
 
-//_ "eventbridge/s3"
 const (
 	//LogQueueJobType is type of Job from scheduler
 	LogQueueJobType string = "io.pavedraod.eventbridge.logQueueJob"
@@ -70,9 +69,20 @@ func (j *logQueueJob) Init() error {
 
 func (j *logQueueJob) Run() (result Result, err error) {
 	c := s3.Customer{}
-	customers, err := c.LoadFromDisk("customer.yaml")
-	if err != nil {
-		log.Fatalf("fail loading customer.yaml: %v\n", err)
+	var customers []s3.Customer
+	var eConf Environment
+
+	if eConf.LoadFrom == "disk" {
+		customers, err = c.LoadFromDisk("customer.yaml")
+		if err != nil {
+			log.Fatalf("fail loading customer.yaml: %v\n", err)
+		}
+	} else {
+		// Load from network
+		customers, err = c.LoadFromDisk("customer.yaml")
+		if err != nil {
+			log.Fatalf("fail loading customer.yaml: %v\n", err)
+		}
 	}
 
 	opts := minio.ListObjectsOptions{
