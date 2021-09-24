@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 package s3
-=======
-package main
->>>>>>> 09db737181dbe3c78da8cef9158c13bca5f1e318
 
 import (
 	"fmt"
