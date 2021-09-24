@@ -1,4 +1,3 @@
-
 // Copyright (c) PavedRoad. All rights reserved.
 // Licensed under the Apache2. See LICENSE file in the project root
 // for full license information.
@@ -16,7 +15,7 @@ type Scheduler interface {
 	CreateSchedule(jsonBlob []byte) (httpStatusCode int, jsonb []byte, err error)
 	DeleteSchedule() (httpStatusCode int, jsonb []byte, err error)
 
-	 // For jobs
+	// For jobs
 	GetScheduledJobs() ([]byte, error)
 	GetScheduleJob(UUID string) (httpStatusCode int, jsonBlob []byte, err error)
 	UpdateScheduleJob(jsonBlob []byte) (httpStatusCode int, jsonb []byte, err error)

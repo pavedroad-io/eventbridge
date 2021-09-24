@@ -8,5 +8,4 @@ type Metric interface {
 	ResetAll()
 
 	Reset(specific string) error
-
 }

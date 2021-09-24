@@ -1,4 +1,3 @@
-
 // Package classification eventbridge API.
 //
 // Micro service for managing a pool of workers
@@ -7,7 +6,7 @@
 // a dispatcher.  The dispatcher manages and forwards jobs
 // to a number N number of workers using a buffered channel.
 //
-// Workers read the jobs, perform the tasks, and log the 
+// Workers read the jobs, perform the tasks, and log the
 // results. The log code, logs to one or more configured
 // destinations.  This can include local file system, stdout,
 // or a Kafka topic.

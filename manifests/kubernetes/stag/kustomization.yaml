@@ -1,0 +1,18 @@
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: pavedroad
+
+bases:
+  - eventbridge
+
+resources:
+  - namespace.yaml
+
+commonLabels:
+  pavedroad.env: stag
+
+commonAnnotations:
+  pavedroad.kustomize.base: eventbridge/manifests/kubernetes/stag
+  pavedroad.kustomize.bases: "eventbridge"

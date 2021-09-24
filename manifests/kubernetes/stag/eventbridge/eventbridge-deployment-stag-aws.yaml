@@ -1,0 +1,66 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eventbridge
+spec:
+  replicas: 3
+  strategy: {}
+  selector:
+    matchLabels:
+      pavedroad.service: eventbridge
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        pavedroad.service: eventbridge
+    spec:
+      containers:
+      - image: 400276217548.dkr.ecr.us-west-1.amazonaws.com/io.pavedroad.stagging/eventbridge
+        env:
+        - name: HTTP_IP_ADDR
+          valueFrom:
+            configMapKeyRef:
+              name: eventbridge-configmap
+              key: ip
+        - name: HTTP_IP_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: eventbridge-configmap
+              key: port
+        - name: PRLOG_AUTOINIT
+          valueFrom:
+            configMapKeyRef:
+              name: eventbridge-configmap
+              key: prlog-auto-init
+        - name: PRLOG_CFGTYPE
+          valueFrom:
+            configMapKeyRef:
+              name: eventbridge-configmap
+              key: prlog-conf-type
+        - name: PRLOG_ENABLEKAFKA
+          valueFrom:
+            configMapKeyRef:
+              name: eventbridge-configmap
+              key: prlog-enable-kafka
+        - name: PRLOG_FILEFORMAT
+          valueFrom:
+            configMapKeyRef:
+              name: eventbridge-configmap
+              key: prlog-file-format
+        - name: PRLOG_FILELOCATION
+          valueFrom:
+            configMapKeyRef:
+              name: eventbridge-configmap
+              key: prlog-file-location
+        - name: PRKAFKA_BROKERS
+          valueFrom:
+            configMapKeyRef:
+              name: eventbridge-configmap
+              key: prlog-kafka-brokers
+        name: eventbridge
+        ports:
+        - containerPort: 8081
+        resources: {}
+      restartPolicy: Always
+status: {}
