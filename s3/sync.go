@@ -362,16 +362,9 @@ func (sc *SyncConfiguration) DeleteDeployment(cf *Customer, caller SyncInitiator
 func (sc *SyncConfiguration) KubeExec(options ...string) (data []byte, err error) {
 	data, err = exec.Command("kubectl", options...).Output()
 	if err != nil {
-		log.Println("Error executing kubectl: ", err)
-		log.Println("Options: ", options)
 		fmt.Println("Error executing kubectl: ", err)
-		fmt.Println("Options: ", options)
 		return nil, err
 	}
-	fmt.Println("Options: ", options)
-	fmt.Println("Data: ", string(data))
-	log.Println("Options: ", options)
-	log.Println("Data: ", string(data))
 	return data, nil
 }
 
