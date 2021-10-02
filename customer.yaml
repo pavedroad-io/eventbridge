@@ -1,0 +1,57 @@
+- id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+  name: "PavedRoad"
+  logs:
+    - provider: wasabi
+      name:  pipeline-artifact-logs
+      logFormat: s3
+      pruneAfterProcessing: true
+      filter: 
+        matchedAPI:
+          - REST
+        matchedHTTPMethods:
+          - PUT
+        matchedResouceTypes:
+          - OBJECT
+  providers:
+    - name: wasabi
+      credentials: test1
+      key: test2
+      region: us-west-1
+      endpoint: s3.us-west-1.wasabisys.com
+    - name: aws-secret
+      credentials: test1
+      key: test2
+      region: us-west-1
+      endpoint: s3.us-west-1.wasabisys.com
+    - name: microk8s-secret
+      credentials: test1
+      key: test2
+      region: us-west-1
+      endpoint: s3.us-west-1.wasabisys.com
+  config:
+    name: test1
+    version: v0.0.0
+    kubectx: microk8s
+    env: dev
+    manifests: ./manifest
+    templates: ./tpl
+    hook:
+        name: eventbridge
+        host: localhost
+        port: 12001
+    dependencies:
+      name: eventbridge-dep
+      eventSourceName: eventbridge
+      eventName: eventbridge
+    triggers:
+      lambda:
+      - name: automd5
+        functionName: pythonmd5
+        provider: aws-secret
+        region: us-west-1
+      - lambda:
+        name: knative-sha
+        functionName: goautosha
+        provider: microk8s-secret
+        region: localcluster
+

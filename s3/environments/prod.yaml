@@ -1,2 +1,6 @@
+loadFrom: network
 environmentName: dev
 eventBridgeConfigURL: https://api.pavedroad.io/api/v1/namespace/pavedroad/customers/
+eventBridgePlogsURL: http://api.pavedroad.io/api/v1/namespace/pavedroad/plogs
+eventBridgePostHost: eventbridge
+configFile: customers.yaml
