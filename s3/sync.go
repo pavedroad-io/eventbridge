@@ -116,6 +116,9 @@ type SyncConfiguration struct {
 
 	// TemplateDirctory to load templates from
 	TemplateDirctory string `yaml:"templates" json:"templates"`
+
+	// PlogConfigID
+	PlogConfigID string `yaml:"plogConfigID" json:"plogConfigID"`
 }
 
 // SyncInitiator

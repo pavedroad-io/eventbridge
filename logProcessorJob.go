@@ -83,6 +83,13 @@ func (j *logProcessorJob) Init() error {
 func (j *logProcessorJob) Run() (result Result, err error) {
 
 	var plogs s3.ProcessedLogs // Tracks logs we've already seen
+	var eConf s3.Environment
+	eConf.Get()
+	s3LogConf := s3.LogConfig{
+		LoadFrom: eConf.LoadFrom,
+		LoadURL:  eConf.EventBridgePlogsURL,
+		CustID:   j.Log.ID,
+	}
 	_log := j.Log
 
 	switch _log.LogFormat {
@@ -143,7 +150,9 @@ func (j *logProcessorJob) Run() (result Result, err error) {
 			Pruned:   _log.Prune,
 		}
 		plogs.ID = nid
-		plogs.AddProcessLog(_log.ID, pli)
+		plogs.Load(s3LogConf)
+		plogs.AddProcessLog(_log.ID, pli, s3LogConf)
+		plogs.Save(s3LogConf)
 	}
 
 	// To avoid casting, convert Job to JSON

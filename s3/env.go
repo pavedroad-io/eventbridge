@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 package s3
-=======
-package main
->>>>>>> 09db737181dbe3c78da8cef9158c13bca5f1e318
 
 import (
 	"fmt"
@@ -14,15 +10,24 @@ import (
 
 const envdir string = "environments/"
 
-var defaultEnvironment = "dev"
+var defaultEnvironment = "environment"
 
+// Environment i,e. dev/test/staging/production
 type Environment struct {
-	// EnvironmentName i,e. dev/test/staging/production
+	LoadFrom             string `yaml:"loadFrom"`
 	EnvironmentName      string `yaml:"environmentName"`
 	EventBridgeConfigURL string `yaml:"eventBridgeConfigURL"`
+	EventBridgePlogsURL  string `yaml:"eventBridgePlogsURL"`
+	ConfigFile           string `yaml:"configFile"`
 }
 
-func (e *Environment) get(envname, version string) Environment {
+func (e *Environment) Get() Environment {
+	envname := defaultEnvironment
+
+	newValue := os.Getenv("PR_BACKEND_END")
+	if newValue != "" {
+		envname = newValue
+	}
 
 	fn := envdir + envname + ".yaml"
 	_, err := e.LoadFromDisk(fn)
@@ -40,6 +45,16 @@ func (e *Environment) Patch() {
 	newValue = os.Getenv("EB_CONFIG_URL")
 	if newValue != "" {
 		e.EventBridgeConfigURL = newValue
+	}
+
+	newValue = os.Getenv("EB_LOAD_FROM")
+	if newValue != "" {
+		e.LoadFrom = newValue
+	}
+
+	newValue = os.Getenv("EB_CONFIG_FILE")
+	if newValue != "" {
+		e.ConfigFile = newValue
 	}
 }
 

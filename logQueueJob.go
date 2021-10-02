@@ -72,6 +72,13 @@ func (j *logQueueJob) Run() (result Result, err error) {
 	var customers []s3.Customer
 	var eConf Environment
 	eConf.get()
+	/*
+		s3LogConf := s3.LogConfig{
+			LoadFrom: eConf.LoadFrom,
+			LoadURL:  eConf.EventBridgePlogsURL,
+			CustID:   j.customers.ID.String(),
+		}
+	*/
 
 	if eConf.LoadFrom == "disk" {
 		customers, err = c.LoadFromDisk("customer.yaml")
@@ -84,6 +91,7 @@ func (j *logQueueJob) Run() (result Result, err error) {
 		if err != nil {
 			log.Fatalf("fail loading customer.yaml: %v\n", err)
 		}
+		fmt.Printf("Found %d customers\n", len(customers))
 	}
 
 	opts := minio.ListObjectsOptions{
@@ -93,10 +101,20 @@ func (j *logQueueJob) Run() (result Result, err error) {
 
 	var logQueue []s3.LogQueueItem
 	var plogs s3.ProcessedLogs
+	pconf := s3.LogConfig{
+		LoadFrom: eConf.LoadFrom,
+		LoadURL:  eConf.EventBridgePlogsURL + "/",
+		CustID:   c.ID.String(),
+	}
+
 	for _, c := range customers {
 		// Load a list of previously processed logs
 		// For now ignore error if not found
-		plogs.LoadFromDisk(c.ID.String())
+
+		fmt.Println(pconf)
+		if err := plogs.Load(pconf); err != nil {
+			log.Printf("Failed to load past processed logs: %v\n", err)
+		}
 
 		// Build a list of providers the customer
 		// uses
@@ -119,6 +137,9 @@ func (j *logQueueJob) Run() (result Result, err error) {
 			}
 
 			for _, o := range objects {
+
+				// See it is already processed
+				//
 				if plogs.Processed(l.Name, o.Key) {
 					continue
 				}
@@ -157,6 +178,12 @@ func (j *logQueueJob) Run() (result Result, err error) {
 
 				logQueue = append(logQueue, item)
 			}
+		}
+		if eConf.LoadFrom == s3.NETWORK {
+			if err := plogs.SaveToNetwork(pconf); err != nil {
+				return nil, err
+			}
+
 		}
 	}
 

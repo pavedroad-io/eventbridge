@@ -12,11 +12,12 @@ const envdir string = "environments/"
 
 var defaultEnvironment = "environment"
 
+// Environment i,e. dev/test/staging/production
 type Environment struct {
-	// EnvironmentName i,e. dev/test/staging/production
 	LoadFrom             string `yaml:"loadFrom"`
 	EnvironmentName      string `yaml:"environmentName"`
 	EventBridgeConfigURL string `yaml:"eventBridgeConfigURL"`
+	EventBridgePlogsURL  string `yaml:"eventBridgePlogsURL"`
 	ConfigFile           string `yaml:"configFile"`
 }
 
