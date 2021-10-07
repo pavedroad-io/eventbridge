@@ -67,7 +67,6 @@ func (e *Environment) Patch() {
 	if newValue != "" {
 		e.ConfigFile = newValue
 	}
-
 }
 
 func (e *Environment) LoadFromDisk(file string) (Environment, error) {
