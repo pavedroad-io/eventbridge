@@ -333,6 +333,9 @@
     }
   },
   "responses": {
+    "customersList": {
+      "description": "Return list of customerss"
+    },
     "genericError": {
       "description": "genericError",
       "schema": {

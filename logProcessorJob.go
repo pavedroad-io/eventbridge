@@ -83,6 +83,14 @@ func (j *logProcessorJob) Init() error {
 func (j *logProcessorJob) Run() (result Result, err error) {
 
 	var plogs s3.ProcessedLogs // Tracks logs we've already seen
+	var eConf s3.Environment
+	eConf.Get()
+	s3LogConf := s3.LogConfig{
+		LoadFrom:     eConf.LoadFrom,
+		LoadURL:      eConf.EventBridgePlogsURL,
+		CustID:       j.Log.ID,
+		PlogConfigID: j.Log.PlogConfigID,
+	}
 	_log := j.Log
 
 	switch _log.LogFormat {
@@ -131,10 +139,6 @@ func (j *logProcessorJob) Run() (result Result, err error) {
 
 		}
 
-		nid, err := uuid.Parse(_log.ID)
-		if err != nil {
-			fmt.Printf("Fail converting ID %s to UUID err %v\n", _log.ID, err)
-		}
 		pli := s3.ProcessedLogItem{
 			Date:     time.Now(),
 			Bucket:   _log.Bucket,
@@ -142,8 +146,10 @@ func (j *logProcessorJob) Run() (result Result, err error) {
 			FileName: _log.Location,
 			Pruned:   _log.Prune,
 		}
-		plogs.ID = nid
-		plogs.AddProcessLog(_log.ID, pli)
+		//plogs.ID = nid
+		plogs.Load(s3LogConf)
+		plogs.AddProcessLog(_log.ID, pli, s3LogConf)
+		plogs.Save(s3LogConf)
 	}
 
 	// To avoid casting, convert Job to JSON

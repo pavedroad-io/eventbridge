@@ -26,6 +26,7 @@ import (
 )
 
 // Initialize setups database connection object and the http server
+
 func (a *EventbridgeApp) Initialize() {
 
 	// set k8s probe
@@ -36,7 +37,6 @@ func (a *EventbridgeApp) Initialize() {
 	a.initializeEnvironment()
 
 	// Start the Dispatcher
-	//a.Scheduler = &bridgeScheduler{}
 	a.Scheduler = &eventScheduler{}
 
 	dConf := &dispatcherConfiguration{
@@ -59,7 +59,6 @@ func (a *EventbridgeApp) Initialize() {
 	}
 	go a.Scheduler.Run()
 
-	a.Ready = true
 	// Start rest end points
 	httpconf.listenString = fmt.Sprintf("%s:%s", httpconf.ip, httpconf.port)
 	a.Router = mux.NewRouter()
@@ -70,8 +69,8 @@ func (a *EventbridgeApp) Initialize() {
 func (a *EventbridgeApp) Run(addr string) {
 
 	log.Println("Listing at: " + addr)
-	// Wrap router with W3C logging
 
+	// Wrap router with W3C logging
 	lf, _ := os.OpenFile("logs/access.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
 
 	loggedRouter := handlers.LoggingHandler(lf, a.Router)
@@ -82,6 +81,7 @@ func (a *EventbridgeApp) Run(addr string) {
 		ReadTimeout:  httpconf.readTimeout * time.Second,
 	}
 
+	a.Ready = true
 	go func() {
 		if err := srv.ListenAndServe(); err != nil {
 			log.Println(err)
@@ -298,7 +298,7 @@ func (a *EventbridgeApp) initializeRoutes() {
 //
 // Responses:
 //				200: listJobResponse
-//        		500: genericError
+//				500: genericError
 
 func (a *EventbridgeApp) listJobs(w http.ResponseWriter, r *http.Request) {
 	count, _ := strconv.Atoi(r.FormValue("count"))

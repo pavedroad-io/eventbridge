@@ -7,7 +7,7 @@ build:
   tagPolicy:
     sha256: {}
   artifacts:
-  - image: localhost:32000//eventbridge
+  - image: localhost:32000/pavedroad-io/eventbridge
     context: .
     custom:
       dependencies:

@@ -116,6 +116,9 @@ type SyncConfiguration struct {
 
 	// TemplateDirctory to load templates from
 	TemplateDirctory string `yaml:"templates" json:"templates"`
+
+	// PlogConfigID
+	PlogConfigID string `yaml:"plogConfigID" json:"plogConfigID"`
 }
 
 // SyncInitiator
@@ -360,6 +363,7 @@ func (sc *SyncConfiguration) DeleteDeployment(cf *Customer, caller SyncInitiator
 }
 
 func (sc *SyncConfiguration) KubeExec(options ...string) (data []byte, err error) {
+	fmt.Println("kubecmd: ", options)
 	data, err = exec.Command("kubectl", options...).Output()
 	if err != nil {
 		fmt.Println("Error executing kubectl: ", err)

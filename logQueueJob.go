@@ -84,6 +84,7 @@ func (j *logQueueJob) Run() (result Result, err error) {
 		if err != nil {
 			log.Fatalf("fail loading customer.yaml: %v\n", err)
 		}
+		fmt.Printf("Found %d customers\n", len(customers))
 	}
 
 	opts := minio.ListObjectsOptions{
@@ -93,10 +94,21 @@ func (j *logQueueJob) Run() (result Result, err error) {
 
 	var logQueue []s3.LogQueueItem
 	var plogs s3.ProcessedLogs
+
 	for _, c := range customers {
 		// Load a list of previously processed logs
 		// For now ignore error if not found
-		plogs.LoadFromDisk(c.ID.String())
+		pconf := s3.LogConfig{
+			LoadFrom:     eConf.LoadFrom,
+			LoadURL:      eConf.EventBridgePlogsURL + "/",
+			CustID:       c.ID.String(),
+			PlogConfigID: c.Configuration.PlogConfigID,
+		}
+
+		if err := plogs.Load(pconf); err != nil {
+			log.Printf("Failed to load past processed logs: %v\n", err)
+			fmt.Printf("Failed to load past processed logs: %v\n", err)
+		}
 
 		// Build a list of providers the customer
 		// uses
@@ -109,6 +121,7 @@ func (j *logQueueJob) Run() (result Result, err error) {
 				log.Printf("Provider not found: %v\n", err)
 				continue
 			}
+
 			s3Client, err := s3.NewClient(p)
 			if err != nil {
 				log.Fatalln(err)
@@ -119,6 +132,9 @@ func (j *logQueueJob) Run() (result Result, err error) {
 			}
 
 			for _, o := range objects {
+
+				// See it is already processed
+				//
 				if plogs.Processed(l.Name, o.Key) {
 					continue
 				}
@@ -131,21 +147,26 @@ func (j *logQueueJob) Run() (result Result, err error) {
 					log.Fatalln(err)
 				}
 
+				c.Configuration.Hook.Host = eConf.EventBridgePostHost
+
 				item := s3.LogQueueItem{
-					ID:        c.ID.String(),
-					Bucket:    l.Name,
-					Webhook:   c.Configuration.Hook,
-					Filter:    l.FilterEvents,
-					Name:      o.Key,
-					Created:   time.Now(),
-					Location:  f,
-					LogFormat: c.Logs[i].LogFormat,
-					Processed: false,
-					Prune:     c.Logs[i].PruneAfterProcessing,
+					ID:           c.ID.String(),
+					Bucket:       l.Name,
+					Webhook:      c.Configuration.Hook,
+					Filter:       l.FilterEvents,
+					Name:         o.Key,
+					Created:      time.Now(),
+					Location:     f,
+					LogFormat:    c.Logs[i].LogFormat,
+					Processed:    false,
+					PlogConfigID: c.Configuration.PlogConfigID,
+					Prune:        c.Logs[i].PruneAfterProcessing,
 				}
+
 				// send item to kafka
 				jitem, _ := json.Marshal(item)
 				logger.Printf(string(jitem))
+
 				// Write new Job to dispatcher Job
 				// Channel
 				nj := &logProcessorJob{}
@@ -158,6 +179,16 @@ func (j *logQueueJob) Run() (result Result, err error) {
 				logQueue = append(logQueue, item)
 			}
 		}
+
+		/*
+			if eConf.LoadFrom == s3.NETWORK {
+				fmt.Println("plots save: ", plogs)
+				if err := plogs.SaveToNetwork(pconf); err != nil {
+					return nil, err
+				}
+
+			}
+		*/
 	}
 
 	payload, err := json.Marshal(logQueue)

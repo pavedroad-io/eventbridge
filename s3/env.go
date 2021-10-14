@@ -10,15 +10,25 @@ import (
 
 const envdir string = "environments/"
 
-var defaultEnvironment = "dev"
+var defaultEnvironment = "environment"
 
+// Environment i,e. dev/test/staging/production
 type Environment struct {
-	// EnvironmentName i,e. dev/test/staging/production
+	LoadFrom             string `yaml:"loadFrom"`
 	EnvironmentName      string `yaml:"environmentName"`
 	EventBridgeConfigURL string `yaml:"eventBridgeConfigURL"`
+	EventBridgePlogsURL  string `yaml:"eventBridgePlogsURL"`
+	EventBridgePostHost  string `yaml:"eventBridgePostHost"`
+	ConfigFile           string `yaml:"configFile"`
 }
 
-func (e *Environment) get(envname, version string) Environment {
+func (e *Environment) Get() Environment {
+	envname := defaultEnvironment
+
+	newValue := os.Getenv("PR_BACKEND_END")
+	if newValue != "" {
+		envname = newValue
+	}
 
 	fn := envdir + envname + ".yaml"
 	_, err := e.LoadFromDisk(fn)
@@ -33,9 +43,29 @@ func (e *Environment) get(envname, version string) Environment {
 func (e *Environment) Patch() {
 	var newValue string
 
+	newValue = os.Getenv("EB_LOAD_FROM")
+	if newValue != "" {
+		e.LoadFrom = newValue
+	}
+
 	newValue = os.Getenv("EB_CONFIG_URL")
 	if newValue != "" {
 		e.EventBridgeConfigURL = newValue
+	}
+
+	newValue = os.Getenv("EB_PLOGS_URL")
+	if newValue != "" {
+		e.EventBridgePlogsURL = newValue
+	}
+
+	newValue = os.Getenv("EB_POST_HOST")
+	if newValue != "" {
+		e.EventBridgePostHost = newValue
+	}
+
+	newValue = os.Getenv("EB_CONFIG_FILE")
+	if newValue != "" {
+		e.ConfigFile = newValue
 	}
 }
 

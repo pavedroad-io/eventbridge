@@ -1,0 +1,19 @@
+
+version: '3'
+
+services:
+  eventbridge:
+    image: pavedroad-io/eventbridge
+    expose:
+     - "8083"
+    ports: 
+     - 8083:8083
+    environment:
+     - HTTP_IP_ADDR=0.0.0.0
+     - HTTP_IP_PORT=8083
+     - PRLOG_AUTOINIT=true
+     - PRLOG_CFGTYPE=env
+     - PRLOG_ENABLEKAFKA=false
+     - PRLOG_FILEFORMAT=text
+     - PRLOG_FILELOCATION=logs/eventbridge.log
+     - PRKAFKA_BROKERS=kafka:9092

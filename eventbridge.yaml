@@ -3,6 +3,8 @@ info:
   id: workerPool
   name: eventbridge
   organization: PavedRoad
+  githuborg: pavedroad-io
+  sonarcloudorg: pavedroad-io
   release-status: alpha
   version: 0.0.1
 project:
@@ -16,6 +18,9 @@ project:
     readiness: ready
     metrics: metrics
     management: management
+  configuration:
+    http-host: "0.0.0.0"
+    http-port: "8083"
   dependencies:
   - command: start --insecure
     comments: used for events
@@ -32,7 +37,7 @@ project:
     volumes: []
   description: Allocate jobs to workers in a pool
   top_level_domain: "api.pavedroad.io"
-  scheduler_name: "bridgeScheduler"
+  scheduler_name: "eventScheduler"
   integrations:
   - name: fossa
     shields:

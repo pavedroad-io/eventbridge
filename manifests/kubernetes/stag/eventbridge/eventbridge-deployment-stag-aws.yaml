@@ -60,7 +60,7 @@ spec:
               key: prlog-kafka-brokers
         name: eventbridge
         ports:
-        - containerPort: 8081
+        - containerPort: 8083
         resources: {}
       restartPolicy: Always
 status: {}

@@ -37,7 +37,7 @@ var testSampleCode = true
 func TestMain(m *testing.M) {
 	a = EventbridgeApp{}
 
-	//JobTestMain()
+	JobTestMain()
 
 	a.Initialize()
 	go a.Run(httpconf.listenString)

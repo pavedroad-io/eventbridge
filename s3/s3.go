@@ -20,6 +20,10 @@ func s3main() {
 		log.Fatalf("fail loading customer.yaml: %v\n", err)
 
 	}
+
+	var eConf Environment
+	eConf.Get()
+
 	opts := minio.ListObjectsOptions{
 		Recursive: true,
 		Prefix:    "",
@@ -79,6 +83,12 @@ func s3main() {
 		}
 	}
 
+	// READ from env
+	pconf := LogConfig{
+		LoadFrom: "network",
+		LoadURL:  "",
+	}
+
 	for _, l := range logQueue {
 		switch l.LogFormat {
 		case S3:
@@ -121,7 +131,7 @@ func s3main() {
 				Pruned:   l.Prune,
 			}
 			plogs.ID = nid
-			plogs.AddProcessLog(l.ID, i)
+			plogs.AddProcessLog(l.ID, i, pconf)
 		}
 	}
 }

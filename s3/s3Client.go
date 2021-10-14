@@ -9,7 +9,7 @@ import (
 
 func NewClient(p Provider) (*minio.Client, error) {
 	s3Client, err := minio.New(p.Endpoint, &minio.Options{
-		Creds:  credentials.NewStaticV4(p.Credentials, p.Key, p.Region),
+		Creds:  credentials.NewStaticV4(p.Key, p.Credentials, p.Region),
 		Secure: true,
 	})
 	if err != nil {
