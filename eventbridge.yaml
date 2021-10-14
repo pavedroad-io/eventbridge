@@ -37,7 +37,7 @@ project:
     volumes: []
   description: Allocate jobs to workers in a pool
   top_level_domain: "api.pavedroad.io"
-  scheduler_name: "bridgeScheduler"
+  scheduler_name: "eventScheduler"
   integrations:
   - name: fossa
     shields:

@@ -6,7 +6,7 @@
 #}
 
 host=127.0.0.1
-port=8081
+port=8083
 service="Eventbridge"
 namespace="pavedroad"
 postdata="{\"schedule_type\": \"Constant interval scheduler\", \"send_interval_seconds\": 5}"

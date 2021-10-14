@@ -8,7 +8,6 @@ resources:
   - namespace.yaml
   - install.yaml
   - install-validating-webhook.yaml
-  - native.yaml
 
 commonLabels:
   pavedroad.env: staging

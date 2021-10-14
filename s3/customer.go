@@ -89,18 +89,23 @@ func (c *Customer) LoadFromDisk(file string) ([]Customer, error) {
 
 func (c *Customer) LoadFromNetwork(url string) ([]Customer, error) {
 	cl := []Customer{}
-	var clist []listResponse
+	var lr []listResponse
+	requrl := url + "LIST"
 
-	req, err := http.NewRequest("GET", url+"LIST", nil)
+	req, err := http.NewRequest("GET", requrl, nil)
 	if err != nil {
 		log.Println("New Request faild", err)
 	}
 
+	q := req.URL.Query()
+	q.Add("count", "999999999")
+	req.URL.RawQuery = q.Encode()
+
 	req.Header.Add("content-type", "application/json")
 
 	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		log.Println("Do failed", err)
+	if err != nil || res.StatusCode != 200 {
+		log.Printf("Do failed err: %v \nURL: %v\nBody: %v\n", err, requrl, res)
 	}
 
 	defer res.Body.Close()
@@ -110,15 +115,13 @@ func (c *Customer) LoadFromNetwork(url string) ([]Customer, error) {
 		log.Println("Reading res.Body failed", err)
 	}
 
-	log.Println("Customer list: ", string(body))
-
-	if err := json.Unmarshal(body, &clist); err != nil {
+	if err := json.Unmarshal(body, &lr); err != nil {
 		fmt.Println("Unmarshall failed: ", err)
 		log.Println("Unmarshall failed: ", err)
 		return cl, err
 	}
 
-	for _, v := range clist {
+	for _, v := range lr {
 
 		nc, err := c.GetCustomer(url, v.UUID)
 		if err != nil {

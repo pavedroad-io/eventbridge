@@ -18,6 +18,6 @@ spec:
   webhook:
     eventbridge:
       port: "{{.HookData.Port}}"
-      endpoint: {{.HookData.Name}}
+      endpoint: /{{.HookData.Name}}
       method: POST
 {{end}}

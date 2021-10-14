@@ -6,12 +6,10 @@ namespace: pavedroad
 
 bases:
   - eventbridge
-
-resources:
-  - namespace.yaml
+  - ingress
 
 commonLabels:
-  pavedroad.env: stag
+  pavedroad.env: staging
 
 commonAnnotations:
   pavedroad.kustomize.base: eventbridge/manifests/kubernetes/stag

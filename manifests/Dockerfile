@@ -22,5 +22,5 @@ RUN mkdir -p ${pavedroad}/logs
 WORKDIR ${pavedroad}
 COPY $ms $pavedroad
 
-EXPOSE 8081
+EXPOSE 8083
 CMD ["/bin/sh", "-c", "$pavedroadbin"]

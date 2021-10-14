@@ -1,26 +1,21 @@
 
 resources:
-  - eventbridge-deployment-stag-aws.yaml
-  - eventbridge-service-stag-aws.yaml
+  - eventbridge-deployment.yaml
+  - eventbridge-service.yaml
 
 commonLabels:
   pavedroad.service: eventbridge
-  pavedroad.env: stag
 
 commonAnnotations:
-  pavedroad.roadctl.version: alphav1
+  pavedroad.roadctl.version: v1.0.0beta
   pavedroad.roadctl.web: www.pavedroad.io
   pavedroad.roadctl.support: support@pavedroad.io
 
 configMapGenerator:
 - name: eventbridge-configmap
   literals:
+  - database-ip=staging-db
   - ip=0.0.0.0
-  - port=8081
-  - prlog-auto-init=true
-  - prlog-conf-type=env
-  - prlog-enable-kafka=true
-  - prlog-file-format=text
-  - prlog-file-location=logs/eventbridge.log"
-  - prlog-kafka-brokers=kafka:9092
+  - port=8083
+  - host-ip=staging-db.pavedroad
 

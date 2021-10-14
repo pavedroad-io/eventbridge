@@ -9,7 +9,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -37,34 +36,35 @@ const (
 type LogBuckets struct {
 
 	// Name of the bucket
-	Name string `yaml:"name"`
+	Name string `yaml:"name" json:"name"`
 
 	// LogFormat S3, w3c, etc
-	LogFormat string `yaml:"logFormat"`
+	LogFormat string `yaml:"logFormat" json:"logFormat"`
 
 	// Provider credentials
-	Provider string `yaml:"provider"`
+	Provider string `yaml:"provider" json:"provider"`
 
-	// PruneAfterProcessing aka delete when donw
-	PruneAfterProcessing bool `yaml:"pruneAfterProcessing"`
+	// PruneAfterProcessing aka delete when down
+	PruneAfterProcessing bool `yaml:"pruneAfterProcessing" json:"pruneAfterProcessing"`
 
 	// FilterEvents to apply to the log
-	FilterEvents S3Filter `yaml:"filter"`
+	FilterEvents S3Filter `yaml:"filter" json:"filterevents"`
 }
 
 type LogQueue []LogQueueItem
 
 type LogQueueItem struct {
-	ID        string        `json:"id"`
-	Bucket    string        `json:"bucket"`
-	Webhook   WebHookConfig `json:"webhook"`
-	Filter    S3Filter      `json:"filter"`
-	Name      string        `json:"name"`
-	Created   time.Time     `json:"created"`
-	Location  string        `json:"location"`
-	LogFormat string        `json:"logFormat"`
-	Processed bool          `json:"processed"`
-	Prune     bool          `json:"prune"`
+	ID           string        `json:"id"`
+	Bucket       string        `json:"bucket"`
+	Webhook      WebHookConfig `json:"webhook"`
+	Filter       S3Filter      `json:"filter"`
+	Name         string        `json:"name"`
+	Created      time.Time     `json:"created"`
+	Location     string        `json:"location"`
+	LogFormat    string        `json:"logFormat"`
+	Processed    bool          `json:"processed"`
+	PlogConfigID string        `json:"plogConfigID"`
+	Prune        bool          `json:"prune"`
 }
 
 // LogConfig passed data allowing processed logs
@@ -75,15 +75,21 @@ type LogConfig struct {
 	// http://........pavedroad/plogs/UUID
 	// where UUID is specific to this customer
 
-	CustID string `json:"custID"` // Is prefixed to the file name on disk
+	CustID       string `json:"custID"`       // Is prefixed to the file name on disk
+	PlogConfigID string `json:"plogConfigID"` // ID when loading logs from the network
 }
 
 // ProcessedLogs for a given customer
 type ProcessedLogs struct {
 	// ID customer ID
-	ID uuid.UUID `json:"id"`
+	ID uuid.UUID `json:"plogsuuid"`
+
 	// Processed list of processed logs
-	ProcessedItems []ProcessedLogItem `json:"processedItems"`
+	ProcessedItems []ProcessedLogItem `json:"processeditems"`
+
+	// Processed list of processed logs
+	Created time.Time `json:"created"`
+	Updated time.Time `json:"updated"`
 }
 
 // ProcessedLogItem information on a processed log
@@ -118,11 +124,11 @@ func (pls *ProcessedLogs) Processed(bucket, name string) bool {
 func (pls *ProcessedLogs) Load(conf LogConfig) error {
 	switch conf.LoadFrom {
 	case NETWORK:
-		return pls.LoadFromNetwokr(conf)
+		return pls.LoadFromNetwork(conf)
 	case FILESYSTEM:
 		return pls.LoadFromDisk(conf.CustID)
 	default:
-		msg := fmt.Errorf("Missing or invalid LoadFrom in LogConfig %w\n", conf.LoadFrom)
+		msg := fmt.Errorf("Missing or invalid LoadFrom in LogConfig %v\n", conf.LoadFrom)
 		return msg
 	}
 
@@ -136,52 +142,52 @@ func (pls *ProcessedLogs) Save(conf LogConfig) error {
 	case FILESYSTEM:
 		return pls.SaveToDisk(conf.CustID)
 	default:
-		msg := fmt.Errorf("Missing or invalid LoadFrom in LogConfig %w\n", conf.LoadFrom)
+		msg := fmt.Errorf("Missing or invalid LoadFrom in LogConfig %v\n", conf.LoadFrom)
 		return msg
 	}
 
 	return nil
 }
 
-func (pls *ProcessedLogs) LoadFromNetwokr(conf LogConfig) error {
-	respPlogs := ProcessedLogs{}
+func (pls *ProcessedLogs) LoadFromNetwork(conf LogConfig) error {
 
-	req, err := http.NewRequest("GET", conf.LoadURL+"/"+pls.ID.String(), nil)
+	_, err := uuid.Parse(conf.PlogConfigID)
 	if err != nil {
-		log.Println("New Request faild", err)
+		msg := fmt.Errorf("Failed to parse PlogConfigID %v err: %v\n", conf.CustID, err)
+		log.Printf("%v\n", msg.Error())
+		return msg
+	}
+
+	reqURL := conf.LoadURL + "/" + conf.PlogConfigID
+	req, err := http.NewRequest("GET", reqURL, nil)
+	if err != nil {
+		msg := fmt.Errorf("NewRequest failed URL %v err: %v\n", reqURL, err)
+		log.Printf("%v\n", msg.Error())
+		return msg
 	}
 
 	req.Header.Add("content-type", "application/json")
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		log.Println("Do failed", err)
+		msg := fmt.Errorf("Do failed error: %v\n", err)
+		log.Printf("%v\n", msg.Error())
+		return msg
 	}
 
 	defer res.Body.Close()
 
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		log.Println("Reading res.Body failed", err)
+		msg := fmt.Errorf("Reading res.Body failed with error: %v\n", err)
+		log.Printf("%v\n", msg.Error())
+		return msg
 	}
 
-	log.Println("Plogs load failed: ", string(body))
-
-	if err := json.Unmarshal(body, &respPlogs); err != nil {
-		fmt.Println("Unmarshall failed: ", err)
-		log.Println("Unmarshall failed: ", err)
+	if err := json.Unmarshal(body, pls); err != nil {
+		log.Println("Load Plogs unmarshall failed: ", err)
 		return err
 	}
-
-	// Parse the plogsconf key to a UUID
-	strid := conf.LoadURL[strings.LastIndexAny(conf.LoadURL, "/")+1:]
-	uuid, err := uuid.Parse(strid)
-	if err != nil {
-		fmt.Errorf("Invalid PlogsUUID %v:%w\n", strid, err)
-	} else {
-		pls.ID = uuid
-	}
-	pls.ProcessedItems = respPlogs.ProcessedItems
 
 	return nil
 }
@@ -190,7 +196,6 @@ func (pls *ProcessedLogs) SaveToNetwork(conf LogConfig) error {
 
 	payload, err := json.Marshal(pls)
 	if err != nil {
-		fmt.Println("Marshall failed: ", err)
 		log.Println("Marshall failed: ", err)
 		return err
 	}
@@ -271,16 +276,10 @@ func (pls *ProcessedLogs) SaveToDisk(ID string) error {
 
 func (pls *ProcessedLogs) AddProcessLog(ID string, log ProcessedLogItem, conf LogConfig) error {
 
-	/*
-		if err := pls.LoadFromDisk(ID); err != nil {
-			fmt.Println("LoadFromDisk failed: ", err)
-		}
-	*/
-
 	pls.ProcessedItems = append(pls.ProcessedItems, log)
 	if conf.LoadFrom == FILESYSTEM {
 		if err := pls.SaveToDisk(ID); err != nil {
-			fmt.Println(err)
+			fmt.Println("pls.SaveToDisk failed with err: ", err)
 			return err
 		}
 	}

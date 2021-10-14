@@ -11,7 +11,7 @@ func ListBucketObjects(client *minio.Client, bucket string, opts minio.ListObjec
 
 	for obj := range client.ListObjects(context.Background(), bucket, opts) {
 		if obj.Err != nil {
-			fmt.Println(obj.Err)
+			fmt.Println("getBucketsObjects.go failed with err: ", obj.Err)
 			return nil, nil
 		}
 		objects = append(objects, obj)

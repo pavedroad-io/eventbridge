@@ -6,6 +6,7 @@ metadata:
   labels:
     CustomerID: "1234"
     UserID: "5678"
+    ConfID: ""
     AuthorizationToken: "none"
     ReferenceID: "none"
 spec:

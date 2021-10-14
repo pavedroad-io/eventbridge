@@ -1,0 +1,65 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eventbridge
+spec:
+  replicas: 3
+  strategy: {}
+  selector:
+    matchLabels:
+      pavedroad.service: eventbridge
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        pavedroad.service: eventbridge
+    spec:
+      initContainers:
+      - image: busybox:1.28
+        name: wait-for-cockroach
+        command: ['sh', '-c', 'until nslookup staging-db; do echo waiting for staging-db; sleep 2; done;']
+      - image: 400276217548.dkr.ecr.us-west-1.amazonaws.com/io.pavedroad.staging/eventbridgeinitdb
+        env:
+        - name: COCKROACH_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: cockroach-configmap
+              key: host-ip
+        name: eventbridgedbinit
+      containers:
+      - image: 400276217548.dkr.ecr.us-west-1.amazonaws.com/io.pavedroad.staging/eventbridge
+        env:
+        - name: PRLOG_AUTOINIT
+          value: "true"
+        - name: PRLOG_CFGTYPE
+          value: "env"
+        - name: PRLOG_ENABLEKAFKA
+          value: "true"
+        - name: PRLOG_FILEFORMAT
+          value: "text"
+        - name: PRLOG_FILELOCATION
+          value: "logs/eventbridge.log"
+        - name: PRKAFKA_BROKERS
+          value: "kafka:9092"
+        - name: HTTP_IP_ADDR
+          valueFrom:
+            configMapKeyRef:
+              name: eventbridge-configmap
+              key: ip
+        - name: HTTP_IP_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: eventbridge-configmap
+              key: port
+        - name: APP_DB_IP
+          valueFrom:
+            configMapKeyRef:
+              name: eventbridge-configmap
+              key: database-ip
+        name: eventbridge
+        ports:
+        - containerPort: 8083
+        resources: {}
+      restartPolicy: Always
+status: {}

@@ -5,18 +5,18 @@ import "fmt"
 // Provider for creating new client
 type Provider struct {
 	// Name AWS, GCP, etc
-	Name string `yaml:"name"`
+	Name string `yaml:"name" json:"name"`
 
 	// Credentials key name
-	Credentials string `yaml:"credentials"`
+	Credentials string `yaml:"credentials" json:"credentials"`
 	// Key value
-	Key string `yaml:"key"`
+	Key string `yaml:"key" json:"key"`
 
 	// Region us-west-1, etc
-	Region string `yaml:"region"`
+	Region string `yaml:"region" json:"region"`
 
 	// Endpoint s3.aws.com
-	Endpoint string `yaml:"endpoint"`
+	Endpoint string `yaml:"endpoint" json:"endpoint"`
 }
 
 type Providers []Provider
