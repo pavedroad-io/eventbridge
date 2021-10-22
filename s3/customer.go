@@ -104,8 +104,10 @@ func (c *Customer) LoadFromNetwork(url string) ([]Customer, error) {
 	req.Header.Add("content-type", "application/json")
 
 	res, err := http.DefaultClient.Do(req)
+	fmt.Println(res, err)
 	if err != nil || res.StatusCode != 200 {
 		log.Printf("Do failed err: %v \nURL: %v\nBody: %v\n", err, requrl, res)
+		return cl, err
 	}
 
 	defer res.Body.Close()

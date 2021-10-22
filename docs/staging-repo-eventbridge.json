@@ -1,0 +1,13 @@
+{
+    "repository": {
+        "repositoryArn": "arn:aws:ecr:us-west-1:400276217548:repository/io.pavedroad.staging/eventbridge",
+        "registryId": "400276217548",
+        "repositoryName": "io.pavedroad.staging/eventbridge",
+        "repositoryUri": "400276217548.dkr.ecr.us-west-1.amazonaws.com/io.pavedroad.staging/eventbridge",
+        "createdAt": 1634787391.0,
+        "imageTagMutability": "MUTABLE",
+        "imageScanningConfiguration": {
+            "scanOnPush": false
+        }
+    }
+}

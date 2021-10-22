@@ -1,5 +1,5 @@
 
-apiVersion: skaffold/v1beta9
+apiVersion: skaffold/v2beta10
 kind: Config
 build:
   insecureRegistries:
@@ -11,7 +11,8 @@ build:
       dockerfile: manifests/Dockerfile
 deploy:
   kustomize:
-    path: "manifests/kubernetes/dev"
+    paths:
+    - "manifests/kubernetes/dev"
 profiles:
   - name: dev-debug
     activation:
