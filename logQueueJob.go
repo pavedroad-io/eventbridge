@@ -100,7 +100,7 @@ func (j *logQueueJob) Run() (result Result, err error) {
 		// For now ignore error if not found
 		pconf := s3.LogConfig{
 			LoadFrom:     eConf.LoadFrom,
-			LoadURL:      eConf.EventBridgePlogsURL + "/",
+			LoadURL:      eConf.EventBridgePlogsURL,
 			CustID:       c.ID.String(),
 			PlogConfigID: c.Configuration.PlogConfigID,
 		}

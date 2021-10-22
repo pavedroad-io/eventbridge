@@ -1,0 +1,22 @@
+type S3LogLine struct {
+    BucketOwner    string `json:"bucketOwner"`    //0
+    Bucket         string `json:"bucket"`         //1
+    Time           string `json:"time"`           //2
+    RemoteIP       string `json:"remoteIP"`       //3
+    Requester      string `json:"requester"`      //4
+    RequestId      string `json:"requestId"`      //5
+    Operation      string `json:"operation"`      //6
+    Key            string `json:"key"`            //7
+    RequestURI     string `json:"requestURI"`     //8
+    HttpStatusCode int    `json:"httpStatusCode"` //9
+    ErrorCode      string `json:"errorCode"`      //10
+    BytesSent      int    `json:"bytesSent"`      //11
+    ObjectSize     int    `json:"objectSize"`     //12
+    TotalTime      int    `json:"totalTime"`      //13
+    TurnAroundTime int    `json:"turnAroundTime"` //14
+    Referrer       string `json:"referrer"`       //15
+    UserAgent      string `json:"userAgent"`      //16
+    VersionId      string `json:"versionId"`      //17
+}
+
+

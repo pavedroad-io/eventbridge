@@ -110,10 +110,11 @@ func (j *logProcessorJob) Run() (result Result, err error) {
 			}
 			eventBytes, _ := json.Marshal(eventData)
 			postBody := bytes.NewBuffer(eventBytes)
+			fmt.Println(string(eventBytes))
 
 			resp, err := http.Post(
 				"http://"+
-					_log.Webhook.Host+":"+
+					_log.Webhook.Host+eConf.K8SService+":"+
 					_log.Webhook.Port+
 					"/"+_log.Webhook.Name,
 				"application/json",

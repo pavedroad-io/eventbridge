@@ -20,6 +20,7 @@ type Environment struct {
 	EventBridgePlogsURL  string `yaml:"eventBridgePlogsURL"`
 	EventBridgePostHost  string `yaml:"eventBridgePostHost"`
 	ConfigFile           string `yaml:"configFile"`
+	K8SService           string `yaml:"k8sService"`
 }
 
 func (e *Environment) get() Environment {

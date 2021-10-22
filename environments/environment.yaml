@@ -4,4 +4,5 @@ eventBridgeConfigURL: http://localhost:8081/api/v1/namespace/pavedroad/customers
 eventBridgePlogsURL: http://localhost:8084/api/v1/namespace/pavedroad/plogs
 eventBridgePostHost: localhost
 configFile: customers.yaml
+k8sService:
 

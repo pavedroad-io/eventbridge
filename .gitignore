@@ -19,3 +19,5 @@
 /artifacts/*
 /.templates/*
 /.scannerwork/*
+pavedroad.log
+debug.log

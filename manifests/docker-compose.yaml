@@ -5,9 +5,9 @@ services:
   eventbridge:
     image: PavedRoad/eventbridge
     expose:
-     - "8083"
+     - "8088"
     ports: 
-     - 8083:8083
+     - 8088:8088
   zookeeper:
     image: wurstmeister/zookeeper
     ports:

@@ -5,12 +5,12 @@ services:
   eventbridge:
     image: pavedroad-io/eventbridge
     expose:
-     - "8083"
+     - "8088"
     ports: 
-     - 8083:8083
+     - 8088:8088
     environment:
      - HTTP_IP_ADDR=0.0.0.0
-     - HTTP_IP_PORT=8083
+     - HTTP_IP_PORT=8088
      - PRLOG_AUTOINIT=true
      - PRLOG_CFGTYPE=env
      - PRLOG_ENABLEKAFKA=false
